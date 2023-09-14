@@ -19,6 +19,7 @@
 #include <sys/wait.h>
 #include <sys/time.h>
 #include <sys/resource.h>
+#include "algorithm"
 
 
 
@@ -32,8 +33,9 @@
 
 
 ///Server includes
-#include "EventManager.hpp"
 #include "Server.hpp"
+
+#include "EventManager.hpp"
 
 
 #endif //WEBSERV_WEBSERVHEADERS_HPP

@@ -11,10 +11,14 @@ public:
     Socket(int domain, int service, int protocol, int port, u_long interface);
     void bindSocket();
     void listenSocket();
+
     void unlinkSocket();
+
     void checkSocket(int connection);
-    virtual ~Socket(){};
+    virtual ~Socket()=default;
     int getSocket() const { return _socket; };
+
+    bool operator==(const int &socket) const { return _socket == socket; };
 };
 
 #endif //WEBSERV_SOCKET_HPP

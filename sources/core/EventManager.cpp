@@ -1,9 +1,13 @@
 #include "../../includes/EventManager.hpp"
 
-#include <sys/socket.h>
-
-int MAX_EVENTS = 10;
-
+EventManager::EventManager() {
+    _kq = kqueue();
+    std::cout << "kq = " << _kq << std::endl;
+    if(_kq == -1) {
+        perror("Ошибка при создании kqueue");
+        exit(1);
+    }
+}
 
 std::string generateResponse() {
     std::ostringstream response;
@@ -17,13 +21,13 @@ std::string generateResponse() {
 
 void EventManager::registerEvent(int socket) {
 
-    _events.emplace_back();
-    EV_SET(&_events.back(), socket, EVFILT_READ, EV_ADD, 0, 0, NULL);
-    kevent(_kq, &_events.back(), 1, NULL, 0, NULL);
+    struct kevent event;
+    EV_SET(&event, socket, EVFILT_READ, EV_ADD, 0, 0, NULL);
+    kevent(_kq, &event, 1, NULL, 0, NULL);
+    _eventsList.push_back(event);
 }
 
-void EventManager::loop(const std::list<Socket> &serverSockets) {
-    struct kevent events[MAX_EVENTS];
+void EventManager::loop(std::list<Socket> &serverSockets) {
 
     int clientSocket;
     struct kevent clientInterest;
@@ -35,7 +39,7 @@ void EventManager::loop(const std::list<Socket> &serverSockets) {
     std::string response = "Hello, world\n";
 
     while (true) {
-        int numEvents = kevent(_kq, NULL, 0, events, _maxEvents, NULL);
+        int numEvents = kevent(_kq, NULL, 0, _eventsArr, maxEvents, NULL);
         if (numEvents == -1) {
             perror("Ошибка при ожидании событий в kqueue");
             exit(1);
@@ -44,13 +48,14 @@ void EventManager::loop(const std::list<Socket> &serverSockets) {
         assert(numEvents == 1);
 
         for (int i = 0; i < numEvents; ++i) {
-            int socket = events[i].ident;
+            int socket = _eventsArr[i].ident;
 
-            if (socket == serverSockets) {
+            if (serverSockets.end() != std::find(serverSockets.begin(), serverSockets.end(), socket))
+            {
                 std::cout << "event on server socket\n" << std::endl;
                 sockaddr_in clientAddr;
                 socklen_t clientAddrLen = sizeof(clientAddr);
-                clientSocket = accept(serverSockets, (struct sockaddr *) &clientAddr, &clientAddrLen);
+                clientSocket = accept(socket, (struct sockaddr *) &clientAddr, &clientAddrLen);
 
                 if (clientSocket == -1) {
                     perror("Ошибка при принятии подключения");
@@ -66,7 +71,7 @@ void EventManager::loop(const std::list<Socket> &serverSockets) {
             else if (socket == clientSocket) {
                 std::cout << "Event on client socket" << std::endl;
 
-                struct kevent event = events[i];
+                struct kevent event = _eventsArr[i];
 
                 switch (event.filter) {
                 case EVFILT_READ: {
@@ -82,7 +87,7 @@ void EventManager::loop(const std::list<Socket> &serverSockets) {
                     printf("read: %s\n", buf);
                     if (event.flags & EV_EOF) {
                         std::cout << "eof" << std::endl;
-                        clientState = {};
+                        //clientState = {};
                         close(clientSocket);
                     }
 
@@ -138,5 +143,5 @@ void EventManager::loop(const std::list<Socket> &serverSockets) {
 }
 
 int EventManager::getMaxEvents() const {
-    return _maxEvents;
+    return maxEvents;
 }

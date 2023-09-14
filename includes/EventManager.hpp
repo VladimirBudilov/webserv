@@ -3,20 +3,23 @@
 
 #include "WebServHeaders.hpp"
 
+class Socket;
 
 class EventManager {
 public:
-    EventManager()=default;
-    ~EventManager()=default;
+    EventManager();
+    ~EventManager(){};
 
     void registerEvent(int socket);
-    void loop(const std::list<Socket> &serverSockets);
+    void loop(std::list<Socket> &serverSockets);
     int getMaxEvents() const;
 private:
+    static const int maxEvents = 63000;
     int _kq = kqueue();
     typedef struct kevent kEvent;
-    std::list<kEvent> _events;
-    int _maxEvents = 1000;
+    std::list<kEvent> _eventsList;
+    kEvent _eventsArr[maxEvents];
+
 };
 
 

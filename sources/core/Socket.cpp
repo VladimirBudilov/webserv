@@ -4,7 +4,7 @@ Socket::Socket(int domain, int service, int protocol, int port, u_long interface
     _addr.sin_family = domain;
     _addr.sin_port = htons(port);
     _addr.sin_addr.s_addr = htonl(interface);
-    _socket = socket(service, protocol, 0);
+    _socket = socket(domain, service, protocol);
     checkSocket(_socket);
 }
 

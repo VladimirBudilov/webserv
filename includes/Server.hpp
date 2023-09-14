@@ -3,18 +3,19 @@
 
 #include "WebServHeaders.hpp"
 
-class EventManager;
 class Socket;
+class EventManager;
 
 class Server {
 private:
     std::list<Socket> _listeningSockets;
     std::list<Socket> _clientSockets;
-    EventManager *_eventManager = new EventManager();
+    EventManager *_eventManager;
 
 public:
-    Server()= default;
-    ~Server()= default;
+
+    Server();
+    ~Server(){};
 
     void start(int port);
     void stop();
