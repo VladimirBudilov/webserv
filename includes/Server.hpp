@@ -16,7 +16,7 @@ public:
     Server()= default;
     ~Server()= default;
 
-    void start();
+    void start(int port);
     void stop();
     void restart();
     void reload();

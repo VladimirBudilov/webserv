@@ -1,6 +1,6 @@
 #include "../../includes/Server.hpp"
 
-void Server::start() {
+void Server::start(int port) {
     std::cout << "Server started" << std::endl;
     _listeningSockets.emplace_back(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY);
     for(auto &socket : _listeningSockets) {
