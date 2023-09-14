@@ -9,11 +9,11 @@ public:
     EventManager()=default;
     ~EventManager()=default;
 
-    void registerSignal(int socket);
-    void loop(int serverSocket);
+    void registerEvent(int socket);
+    void loop(const std::list<Socket> &serverSockets);
     int getMaxEvents() const;
 private:
-    int _kq;
+    int _kq = kqueue();
     typedef struct kevent kEvent;
     std::list<kEvent> _events;
     int _maxEvents = 1000;

@@ -15,21 +15,14 @@ std::string generateResponse() {
     return response.str();
 }
 
-void EventManager::registerSignal(int socket) {
+void EventManager::registerEvent(int socket) {
 
-    EV_SET(&_ev, socket , EVFILT_READ, EV_ADD, 0, 0, NULL);
-    kevent(_kq, &_ev, 1, NULL, 0, NULL);
+    _events.emplace_back();
+    EV_SET(&_events.back(), socket, EVFILT_READ, EV_ADD, 0, 0, NULL);
+    kevent(_kq, &_events.back(), 1, NULL, 0, NULL);
 }
 
-EventManager::EventManager() {
-    _kq = kqueue();
-if (_kq == -1) {
-        perror("Ошибка при создании kqueue");
-        exit(1);
-    }
-}
-
-void EventManager::loop(int serverSocket) {
+void EventManager::loop(const std::list<Socket> &serverSockets) {
     struct kevent events[MAX_EVENTS];
 
     int clientSocket;
@@ -53,11 +46,11 @@ void EventManager::loop(int serverSocket) {
         for (int i = 0; i < numEvents; ++i) {
             int socket = events[i].ident;
 
-            if (socket == serverSocket) {
+            if (socket == serverSockets) {
                 std::cout << "event on server socket\n" << std::endl;
                 sockaddr_in clientAddr;
                 socklen_t clientAddrLen = sizeof(clientAddr);
-                clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddr, &clientAddrLen);
+                clientSocket = accept(serverSockets, (struct sockaddr *) &clientAddr, &clientAddrLen);
 
                 if (clientSocket == -1) {
                     perror("Ошибка при принятии подключения");

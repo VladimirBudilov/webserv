@@ -8,10 +8,7 @@ void Server::start(int port) {
         socket.listenSocket();
     }
     for(auto &socket : _listeningSockets) {
-        _eventManager->registerSignal(socket.getSocket());
+        _eventManager->registerEvent(socket.getSocket());
     }
-    for(auto &socket : _clientSockets) {
-        _eventManager->registerSignal(socket.getSocket());
-    }
-
+    _eventManager->loop(_listeningSockets);
 }
