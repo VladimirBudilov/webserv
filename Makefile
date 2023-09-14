@@ -1,6 +1,6 @@
 NAME     = webserv
-GCC      = g++
-CFLAGS   = -Wall -Wextra -Werror -std=c++11 -g
+GCC      = c++
+CFLAGS   = -Wall -Wextra -Werror -std=c++98
 RM       = rm -rf
 OUTPUT   = ./$(NAME)
 LIBS     = -I./includes/

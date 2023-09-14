@@ -13,7 +13,7 @@ class Location {
 private:
 	std::string path;
 	std::string root;
-	std::string index;
+	std::vector<std::string> index;
 	std::string cgi_pass;
 	bool autoindex;
 	bool file_upload;
@@ -21,6 +21,12 @@ private:
 	unsigned long long max_body_size;
 public:
 	void setPath(const std::string &path);
+	void setRoot(const std::string &root);
+	void setIndex(const std::string &index);
+	void setCgiPass(const std::string &cgiPass);
+	void setAutoindex(bool autoindex);
+	void setFileUpload(bool fileUpload);
+	std::vector<bool> &getMethods();
 };
 
 
