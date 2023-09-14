@@ -1,13 +1,7 @@
-#include <iostream>
-#include <fstream>
-#include <vector>
-#include <string>
-#include <sstream>
 #include "../../includes/webserv.hpp"
-#include "../../includes/Server.hpp"
 
 int main() {
-	std::ifstream infile("~/MyProjects/webserv/webserv.conf");
+	std::ifstream infile("/Users/anatasha/MyProjects/webserv/webserv.conf");
 	if (!infile.is_open()) {
 		std::cout << "Error, could not open file." << std::endl;
 		return 1;
@@ -48,240 +42,28 @@ void parseServer(std::vector<std::string> &str, std::vector<Server>& servers, in
 		std::string word;
 		ss >> word;
 		if (word == "listen") {
-			listen(ss, res);
+			res.listen(ss);
 		} else if (word == "port") {
-			port(ss, res);
+			res.port(ss);
 		} else if (word == "server_name") {
-			server_name(ss, res);
+			res.server_name(ss);
 		} else if (word == "error_page") {
-			error_page(ss, res);
+			res.error_page(ss);
 		} else if (word == "location") {
-			parseLocation(str, res.getLocations(), i);
+			res.parseLocation(str, i);
+		} else if (word == "client_max_body_size") {
+			res.max_body_size(ss);
 		} else {
-			std::cout << "Error, bad config file: " << str[i] << std::endl;
+			std::cout << "Error, bad config file1: " << str[i] << " " << i << std::endl;
 			exit(1);
 		}
 		i++;
 	}
 	if (str[i] != "}") {
-		std::cout << "Error, bad config file: " << str[i] << std::endl;
+		std::cout << "Error, bad config file2: " << str[i] << std::endl;
 		exit(1);
 	}
 	servers.push_back(res);
-}
-
-void parseLocation(std::vector<std::string> &str, std::vector<Location>& locations, int& i)
-{
-	std::stringstream mss(str[i]);
-	std::string location, word, path;
-	Location res;
-	mss >> location >> path >> word;
-	if (location != "location" || word != "{" || mss.eof() != true)
-	{
-		std::cout << "Error, bad config file: " << str[i] << std::endl;
-		exit(1);
-	}
-	if (path[0] != '/')
-	{
-		std::cout << "Error, bad config file: " << str[i] << std::endl;
-		exit(1);
-	}
-	res.setPath(path);
-	i++;
-	while (str[i] != "\t}" && i < str.size()) {
-		std::stringstream ss(str[i]);
-		std::string word;
-		ss >> word;
-		if (word == "root") {
-			root(ss, res);
-		} else if (word == "index") {
-			index(ss, res);
-		} else if (word == "cgi_pass") {
-			cgi_pass(ss, res);
-		} else if (word == "autoindex") {
-			autoindex(ss, res);
-		} else if (word == "file_upload") {
-			file_upload(ss, res);
-		} else if (word == "methods") {
-			methods(ss, res);
-		} else if (word == "max_body_size") {
-			max_body_size(ss, res);
-		}
-		else {
-			std::cout << "Error, bad config file: " << str[i] << std::endl;
-			exit(1);
-		}
-		i++;
-	}
-	if (str[i] != "\t}") {
-		std::cout << "Error, bad config file: " << str[i] << std::endl;
-		exit(1);
-	}
-}
-
-void methods(std::stringstream &ss, Location &res)
-{
-	std::string word;
-	ss >> word;
-	if (word[word.size() - 1] == ';')
-	{
-		word.erase(word.size() - 1);
-		if (word == "GET")
-		{
-			res.getMethods()[0] = true;
-		}
-		else if (word == "POST")
-		{
-			res.getMethods()[1] = true;
-		}
-		else
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
-	}
-	else
-	{
-		if (word == "GET")
-		{
-			res.getMethods()[0] = true;
-		}
-		else if (word == "POST")
-		{
-			res.getMethods()[1] = true;
-		}
-		else
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
-		ss >> word;
-		if (word[word.size() - 1] != ';')
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
-		word.erase(word.size() - 1);
-		if (word == "GET")
-		{
-			res.getMethods()[0] = true;
-		}
-		else if (word == "POST")
-		{
-			res.getMethods()[1] = true;
-		}
-		else
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
-	}
-	if (ss.eof() != true)
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-}
-
-void file_upload(std::stringstream &ss, Location &res)
-{
-	std::string word;
-	ss >> word;
-	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	word.erase(word.size() - 1);
-	if (ss.eof() != true)
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	if (word == "on")
-		res.setFileUpload(true);
-	else if (word == "off")
-		res.setFileUpload(false);
-	else
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-}
-
-void autoindex(std::stringstream &ss, Location &res)
-{
-	std::string word;
-	ss >> word;
-	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	word.erase(word.size() - 1);
-	if (ss.eof() != true)
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	if (word == "on")
-		res.setAutoindex(true);
-	else if (word == "off")
-		res.setAutoindex(false);
-	else
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-}
-
-void cgi_pass(std::stringstream &ss, Location &res)
-{
-	std::string word;
-	ss >> word;
-	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	if (ss.eof() != true)
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	word.erase(word.size() - 1);
-	res.setCgiPass(word);
-}
-
-void index(std::stringstream &ss, Location &res)
-{
-	std::string word;
-	ss >> word;
-	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	if (ss.eof() != true)
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	word.erase(word.size() - 1);
-	res.setIndex(word);
-}
-
-void root(std::stringstream &ss, Location &res)
-{
-	std::string word;
-	ss >> word;
-	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	word.erase(word.size() - 1);
-	res.setRoot(word);
 }
 
 void removeComments(std::vector<std::string> &str) {
@@ -291,17 +73,24 @@ void removeComments(std::vector<std::string> &str) {
 			str[i].erase(pos);
 		}
 	}
+	for (size_t i = 0; i < str.size(); i++) {
+		if (str[i].empty()) {
+			str.erase(str.begin() + i);
+			i--;
+		}
+	}
 }
 
-bool isValidIP(std::string ip) {
+bool isValidIP(const std::string& ip) {
 	std::stringstream ss(ip);
 	std::string segment;
 	int i = 0, num;
 	while (std::getline(ss, segment, '.')) {
-		if (segment.empty() || segment.size() > 3 || (segment.size() > 1 && segment[0] == '0')) return false;
-		for (int i = 0; i < segment.size(); ++i)
+		if (segment.empty() || segment.size() > 3 || (segment.size() > 1 && segment[0] == '0'))
+			return false;
+		for (int j = 0; j < segment.size(); ++j)
 		{
-			char c = segment[i];
+			char c = segment[j];
 			if (!isdigit(c))
 				return false;
 		}
@@ -310,118 +99,4 @@ bool isValidIP(std::string ip) {
 		++i;
 	}
 	return i == 4 && ss.eof();
-}
-
-void listen(std::stringstream &ss, Server &res) {
-	std::string word;
-	ss >> word;
-	if(word[word.size() -1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	word.erase(word.size() - 1);
-	if(!isValidIP(word))
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	if (ss.eof() != true) {
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	res.setHost(word);
-}
-
-void port(std::stringstream& ss, Server& res)
-{
-	std::string word;
-	ss >> word;
-	if(!ss.eof())
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	word.erase(word.size() - 1);
-	for (int i = 0; i < word.size(); ++i)
-	{
-		char c = word[i];
-		if (!isdigit(c))
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
-	}
-	int port = std::atoi(word.c_str());
-	if (port < 0 || port > 65535)
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	res.setPort(port);
-}
-
-void server_name(std::stringstream& ss, Server& res)
-{
-	std::string word;
-	ss >> word;
-	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	word.erase(word.size() - 1);
-	if (ss.eof() != true)
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	res.setServerName(word);
-}
-
-void error_page(std::stringstream& ss, Server& res)
-{
-	std::string word;
-	ss >> word;
-	for (int i = 0; i < word.size(); ++i)
-	{
-		char c = word[i];
-		if (!isdigit(c))
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
-	}
-	int code = std::atoi(word.c_str());
-	if (code < 100 || code > 599)
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
-	std::string path;
-	ss >> path;
-	if (!ss.eof())
-	{
-		std::cout << "Error, bad config file: " << path << std::endl;
-		exit(1);
-	}
-	if(path[path.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << path << std::endl;
-		exit(1);
-	}
-	path.erase(path.size() - 1);
-	std::ifstream infile(path);
-	if (!infile.is_open())
-	{
-		std::cout << "Error, bad config file: " << path << std::endl;
-		exit(1);
-	}
-	infile.close();
-	res.getErrorPages()[code] = path;
 }
