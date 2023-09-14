@@ -1,12 +1,10 @@
 #include "../../includes/Socket.hpp"
 
 Socket::Socket(int domain, int service, int protocol, int port, u_long interface) {
-    (void ) protocol;
-    (void ) service;
     _addr.sin_family = domain;
     _addr.sin_port = htons(port);
     _addr.sin_addr.s_addr = htonl(interface);
-    _socket = socket(AF_INET, SOCK_STREAM, 0);
+    _socket = socket(service, protocol, 0);
     checkSocket(_socket);
 }
 
@@ -22,5 +20,5 @@ void Socket::bindSocket() {
 }
 
 void Socket::listenSocket() {
-    checkSocket(listen(_socket, 128));
+    checkSocket(listen(_socket, SOMAXCONN));
 }

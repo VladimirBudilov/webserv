@@ -1,18 +1,5 @@
 #include "../../includes/EventManager.hpp"
 
-int MAX_EVENTS = 10;
-
-
-std::string generateResponse() {
-    std::ostringstream response;
-    response << "HTTP/1.1 200 OK\r\n";
-    response << "Content-Type: text/plain\r\n";
-    response << "Content-Length: 13\r\n";
-    response << "\r\n";
-    response << "11111111111\r\n";
-    return response.str();
-}
-
 void EventManager::registerSignal(int socket) {
 
     EV_SET(&_ev, socket , EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, NULL);
@@ -28,13 +15,12 @@ if (_kq == -1) {
 }
 
 void EventManager::loop(int serverSocket) {
-    struct kevent events[MAX_EVENTS];
-
+    kEvent events[_maxEvents];
     static int clientSocket;
     static struct kevent clientInterest;
 
     while (true) {
-        int numEvents = kevent(_kq, NULL, 0, events, MAX_EVENTS, NULL);
+        int numEvents = kevent(_kq, NULL, 0, events, _maxEvents, NULL);
         if (numEvents == -1) {
             perror("Ошибка при ожидании событий в kqueue");
             exit(1);
@@ -96,4 +82,8 @@ void EventManager::loop(int serverSocket) {
             }
         }
     }
+}
+
+int EventManager::getMaxEvents() const {
+    return _maxEvents;
 }

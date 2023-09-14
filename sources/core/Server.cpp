@@ -2,10 +2,16 @@
 
 void Server::start() {
     std::cout << "Server started" << std::endl;
-    _socket = new Socket(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY);
-    _socket->bindSocket();
-    _socket->listenSocket();
-    _eventManager = new EventManager();
-    _eventManager->registerSignal(_socket->getSocket());
-    _eventManager->loop(_socket->getSocket());
+    _listeningSockets.emplace_back(AF_INET, SOCK_STREAM, 0, 8080, INADDR_ANY);
+    for(auto &socket : _listeningSockets) {
+        socket.bindSocket();
+        socket.listenSocket();
+    }
+    for(auto &socket : _listeningSockets) {
+        _eventManager->registerSignal(socket.getSocket());
+    }
+    for(auto &socket : _clientSockets) {
+        _eventManager->registerSignal(socket.getSocket());
+    }
+
 }

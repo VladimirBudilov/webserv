@@ -8,13 +8,13 @@ class Socket;
 
 class Server {
 private:
-    Socket *_socket;
-    std::list <int> _serverSockets;
-    EventManager *_eventManager;
+    std::list<Socket> _listeningSockets;
+    std::list<Socket> _clientSockets;
+    EventManager *_eventManager = new EventManager();
 
 public:
-    Server(){};
-    ~Server(){};
+    Server()= default;
+    ~Server()= default;
 
     void start();
     void stop();
