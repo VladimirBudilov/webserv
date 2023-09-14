@@ -1,5 +1,7 @@
 #include "../../includes/EventManager.hpp"
 
+#include <sys/socket.h>
+
 int MAX_EVENTS = 10;
 
 
@@ -15,7 +17,7 @@ std::string generateResponse() {
 
 void EventManager::registerSignal(int socket) {
 
-    EV_SET(&_ev, socket , EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+    EV_SET(&_ev, socket , EVFILT_READ, EV_ADD, 0, 0, NULL);
     kevent(_kq, &_ev, 1, NULL, 0, NULL);
 }
 
@@ -30,8 +32,14 @@ if (_kq == -1) {
 void EventManager::loop(int serverSocket) {
     struct kevent events[MAX_EVENTS];
 
-    static int clientSocket;
-    static struct kevent clientInterest;
+    int clientSocket;
+    struct kevent clientInterest;
+    struct clientState {
+        std::string read;
+        size_t much_written;
+    } clientState;
+
+    std::string response = "Hello, world\n";
 
     while (true) {
         int numEvents = kevent(_kq, NULL, 0, events, MAX_EVENTS, NULL);
@@ -46,6 +54,7 @@ void EventManager::loop(int serverSocket) {
             int socket = events[i].ident;
 
             if (socket == serverSocket) {
+                std::cout << "event on server socket\n" << std::endl;
                 sockaddr_in clientAddr;
                 socklen_t clientAddrLen = sizeof(clientAddr);
                 clientSocket = accept(serverSocket, (struct sockaddr *) &clientAddr, &clientAddrLen);
@@ -56,43 +65,80 @@ void EventManager::loop(int serverSocket) {
 
                 std::cout << "Принято новое подключение\n";
 
-                assert(fcntl(clientSocket, F_SETFL, O_NONBLOCK, FD_CLOEXEC) != -1);
+                // assert(fcntl(clientSocket, F_SETFL, O_NONBLOCK, FD_CLOEXEC) != -1);
 
-                EV_SET(&clientInterest, clientSocket , EVFILT_READ, EV_ADD | EV_ONESHOT, 0, 0, NULL);
+                EV_SET(&clientInterest, clientSocket , EVFILT_READ, EV_ADD, 0, 0, NULL);
                 kevent(_kq, &clientInterest, 1, NULL, 0, NULL);
-/*
-                else {
-                    // Обработка нового подключения
-                    std::cout << "Принято новое подключение\n";
-
-                    char buffer[1024];
-                    ssize_t bytesRead = recv(clientSocket, buffer, sizeof(buffer), 0);
-                    if (bytesRead > 0) {
-                        std::string request(buffer, bytesRead);
-                        if (request.find("GET") != std::string::npos) {
-                            std::string response = generateResponse();
-                            send(clientSocket, response.c_str(), response.size(), 0);
-                        }
-                    }
-                    // close(clientSocket);
-                }
-*/
             }
             else if (socket == clientSocket) {
                 std::cout << "Event on client socket" << std::endl;
 
                 struct kevent event = events[i];
 
-                char buf[event.data + 1];
+                switch (event.filter) {
+                case EVFILT_READ: {
+                    char *buf = (char *) malloc(event.data + 1);
+                    assert(buf);
 
-                recv(clientSocket, buf, event.data, 0);
+                    recv(clientSocket, buf, event.data, 0);
 
-                buf[event.data] = 0;
+                    buf[event.data] = 0;
 
-                printf("read: %s\n", buf);
-                if (event.fflags & EV_EOF) {
-                    std::cout << "eof" << std::endl;
+                    clientState.read += buf;
+
+                    printf("read: %s\n", buf);
+                    if (event.flags & EV_EOF) {
+                        std::cout << "eof" << std::endl;
+                        clientState = {};
+                        close(clientSocket);
+                    }
+
+                    free(buf);
+
+                    if (clientState.read == "get\n") {
+                        // int n = send(clientSocket, "ok\n", 3, 0);
+                        std::cout << "need to respond" << std::endl;
+
+                        clientState.much_written = 0;
+                        struct kevent clientWrite;
+                        EV_SET(&clientWrite, clientSocket, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+                        kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
+                    }
+                    break;
                 }
+                        case EVFILT_WRITE: {
+
+                            assert(response.size() != 0);
+
+                            int can_write = event.data;
+                            int length = response.size();
+
+                            int much_left_to_write = length - clientState.much_written;
+
+                            if (can_write > much_left_to_write)
+                                can_write = much_left_to_write;
+
+                            int much_written = send(
+                                    clientSocket,
+                                    (response.substr(clientState.much_written)).c_str(),
+                                    can_write,
+                                    0
+                            );
+
+                            assert(much_written == can_write);
+
+                            clientState.much_written += can_write;
+
+                            if (clientState.much_written == response.size()) {
+                                struct kevent clientWrite;
+                                EV_SET(&clientWrite, clientSocket, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+                                kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
+                            }
+                            break;
+                        }
+                }
+
+
             }
         }
     }

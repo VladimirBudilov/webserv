@@ -16,7 +16,7 @@ public:
     Server(){};
     ~Server(){};
 
-    void start();
+    void start(int port);
     void stop();
     void restart();
     void reload();
