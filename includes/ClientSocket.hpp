@@ -3,10 +3,10 @@
 #define WEBSERV_CLIENTSOCKET_HPP
 
 #include "WebServHeaders.hpp"
-#include "Socket.hpp"
+#include "ServerSocket.hpp"
 
 
-class ClientSocket : public Socket {
+class ClientSocket : public ServerSocket {
 private:
     typedef struct kevent kEvent;
     kEvent _clientInterest;
@@ -16,9 +16,7 @@ private:
 public:
     ClientSocket(int socket, int kq);
 
-    void setClientInterest(const kEvent &clientInterest) {
-        ClientSocket::_clientInterest = clientInterest;
-    }
+    void setClientInterest(const kEvent &clientInterest);
     kEvent &getClientInterest();
 
     void Read(const std::string &read);

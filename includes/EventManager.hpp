@@ -2,22 +2,19 @@
 #define WEBSERV_EVENTMANAGER_HPP
 
 #include "WebServHeaders.hpp"
-#include "Socket.hpp"
+#include "ServerSocket.hpp"
 #include "ClientSocket.hpp"
 
-class Socket;
+class ServerSocket;
 class ClientSocket;
 
 class EventManager {
 public:
     EventManager();
     ~EventManager(){};
-
     void registerListeningEvent(int socket);
-
     int getKq() const;
-
-    void loop(std::list<Socket> &serverSockets, std::list<ClientSocket> &clientSockets);
+    void loop(std::list<ServerSocket> &serverSockets, std::list<ClientSocket> &clientSockets);
     int getMaxEvents() const;
 private:
     static const int maxEvents = 63000;

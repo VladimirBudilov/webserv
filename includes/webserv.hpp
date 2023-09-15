@@ -1,7 +1,3 @@
-//
-// Created by Andy Natasha on 9/11/23.
-//
-
 #ifndef WEBSERV_WEBSERV_HPP
 #define WEBSERV_WEBSERV_HPP
 
@@ -14,10 +10,10 @@
 #include <cstdlib>
 #include <cctype>
 #include "Location.hpp"
-#include "ParsingServer.hpp"
+#include "ServerConfig.hpp"
 
 void removeComments(std::vector<std::string> &str);
-void parseServer(std::vector<std::string> &str, std::vector<ParsingServer>& servers, int& i);
+void parseServer(std::vector<std::string> &str, std::vector<ServerConfig>& servers, int& i);
 void configError();
 bool isValidIP(const std::string& ip);
 

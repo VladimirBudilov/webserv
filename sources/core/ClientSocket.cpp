@@ -1,4 +1,4 @@
-#include "../../includes/ClientSocket.hpp"
+#include "ClientSocket.hpp"
 
 ClientSocket::kEvent &ClientSocket::getClientInterest() {
     return _clientInterest;
@@ -22,9 +22,13 @@ ClientSocket::ClientSocket(int socket, int kq) {
     setSocket(accept(socket, (struct sockaddr *) &clientAddr, &clientAddrLen));
     checkSocket(_socket);
 
-    // assert(fcntl(clientSocket, F_SETFL, O_NONBLOCK, FD_CLOEXEC) != -1);
+    fcntl(_socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
     EV_SET(&_clientInterest, _socket , EVFILT_READ, EV_ADD, 0, 0, NULL);
     kevent(kq, &_clientInterest, 1, NULL, 0, NULL);
 
+}
+
+void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest) {
+    _clientInterest = clientInterest;
 }
 

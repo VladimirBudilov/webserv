@@ -2,26 +2,28 @@
 #define WEBSERV_SERVER_HPP
 
 #include "WebServHeaders.hpp"
-#include "Socket.hpp"
+#include "ServerSocket.hpp"
 #include "ClientSocket.hpp"
 #include "EventManager.hpp"
+#include "ServerConfig.hpp"
+#include "webserv.hpp"
 
-
-class Socket;
+class ServerSocket;
 class EventManager;
 class ClientSocket;
+class ServerConfig;
 
 class Server {
 private:
     EventManager *_eventManager;
-    std::list<Socket> _serverSockets;
+    std::list<ServerSocket> _serverSockets;
     std::list<ClientSocket> _clientSockets;
-
+    std::vector<ServerConfig> _serverConfigs;
 public:
 
     Server();
     ~Server(){};
-
+    void parseConfigFile(const std::string &configFile);
     void start();
     void stop();
     void restart();

@@ -1,8 +1,4 @@
-//
-// Created by Andy Natasha on 9/12/23.
-//
-
-#include "../../includes/webserv.hpp"
+#include "webserv.hpp"
 
 Location::Location() {
 	_path = std::string();

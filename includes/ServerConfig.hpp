@@ -2,14 +2,14 @@
 // Created by Andy Natasha on 9/11/23.
 //
 
-#ifndef WEBSERV_PARSINGSERVER_HPP
-#define WEBSERV_PARSINGSERVER_HPP
+#ifndef WEBSERV_SERVERCONFIG_HPP
+#define WEBSERV_SERVERCONFIG_HPP
 
 #include "Location.hpp"
 #include <vector>
 #include <map>
 
-class ParsingServer {
+class ServerConfig {
 private:
 	int _port;
 	std::string _host;
@@ -18,7 +18,7 @@ private:
 	std::vector<Location> _locations;
 	unsigned long long _max_body_size;
 public:
-	ParsingServer();
+	ServerConfig();
 
 	int getPort() const;
 	const std::string &getHost() const;
@@ -36,4 +36,4 @@ public:
 
 };
 
-#endif //WEBSERV_PARSINGSERVER_HPP
+#endif //WEBSERV_SERVERCONFIG_HPP

@@ -1,22 +1,5 @@
-#include "../../includes/EventManager.hpp"
+#include "EventManager.hpp"
 
-EventManager::EventManager() {
-    _kq = kqueue();
-    if(_kq == -1) {
-        perror("Ошибка при создании kqueue");
-        exit(1);
-    }
-}
-
-std::string generateResponse() {
-    std::ostringstream response;
-    response << "HTTP/1.1 200 OK\r\n";
-    response << "Content-Type: text/plain\r\n";
-    response << "Content-Length: 13\r\n";
-    response << "\r\n";
-    response << "11111111111\r\n";
-    return response.str();
-}
 
 void EventManager::registerListeningEvent(int socket) {
 
@@ -26,24 +9,23 @@ void EventManager::registerListeningEvent(int socket) {
     _eventsList.push_back(event);
 }
 
-void EventManager::loop(std::list<Socket> &serverSockets, std::list<ClientSocket> &clientSockets) {
-
+void EventManager::loop(std::list<ServerSocket> &serverSockets, std::list<ClientSocket> &clientSockets) {
     std::string response = "Hello, world\n";
     while (true) {
         int numEvents = getEventNumbers();
 
         for (int i = 0; i < numEvents; ++i) {
-            int socket = _eventsArr[i].ident;
+            int currentEventSocket = _eventsArr[i].ident;
 
-            if (serverSockets.end() != std::find(serverSockets.begin(), serverSockets.end(), socket))
+            if (serverSockets.end() != std::find(serverSockets.begin(), serverSockets.end(), currentEventSocket))
             {
-                std::cout << "event on server socket\n" << std::endl;
-                ClientSocket clientSocket(socket, _kq);
+                std::cout << "event on server currentEventSocket\n" << std::endl;
+                ClientSocket clientSocket(currentEventSocket, _kq);
                 clientSockets.push_back(clientSocket);
             }
-            else if (clientSockets.end() != std::find(clientSockets.begin(), clientSockets.end(), socket)) {
-                std::cout << "Event on client socket" << std::endl;
-                ClientSocket clientSocket = *(std::find(clientSockets.begin(), clientSockets.end(), socket));
+            else if (clientSockets.end() != std::find(clientSockets.begin(), clientSockets.end(), currentEventSocket)) {
+                std::cout << "Event on client currentEventSocket" << std::endl;
+                ClientSocket clientSocket = *(std::find(clientSockets.begin(), clientSockets.end(), currentEventSocket));
                 kEvent event = _eventsArr[i];
 
                 switch (event.filter) {
@@ -56,14 +38,13 @@ void EventManager::loop(std::list<Socket> &serverSockets, std::list<ClientSocket
                     printf("_read: %s\n", buf);
                     if (event.flags & EV_EOF) {
                         std::cout << "eof" << std::endl;
-                        //clientState = {};
                         close(clientSocket.getSocket());
                     }
 
                     free(buf);
 
                     if (clientSocket.getRead() == "get\n") {
-                        // int n = send(clientSocket, "ok\n", 3, 0);
+
                         std::cout << "need to respond" << std::endl;
                         clientSocket.MuchWritten(0);
                         struct kevent clientWrite;
@@ -118,6 +99,14 @@ int EventManager::getMaxEvents() const {
 
 int EventManager::getKq() const {
     return _kq;
+}
+
+EventManager::EventManager() {
+    _kq = kqueue();
+    if(_kq == -1) {
+        perror("Ошибка при создании kqueue");
+        exit(1);
+    }
 }
 
 

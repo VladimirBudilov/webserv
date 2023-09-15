@@ -1,10 +1,6 @@
-//
-// Created by Andy Natasha on 9/11/23.
-//
+#include "webserv.hpp"
 
-#include "../../includes/webserv.hpp"
-
-ParsingServer::ParsingServer() {
+ServerConfig::ServerConfig() {
 	this->_port = 80;
 	this->_server_name = "localhost";
 	this->_host = "error";
@@ -13,7 +9,7 @@ ParsingServer::ParsingServer() {
 	this->_locations = std::vector<Location>();
 }
 
-void ParsingServer::parseLocation(std::vector<std::string> &str, int& i)
+void ServerConfig::parseLocation(std::vector<std::string> &str, int& i)
 {
 	std::stringstream mss(str[i]);
 	std::string location, word, path;
@@ -52,7 +48,7 @@ void ParsingServer::parseLocation(std::vector<std::string> &str, int& i)
 	this->_locations.push_back(res);
 }
 
-void ParsingServer::max_body_size(std::stringstream &ss)
+void ServerConfig::max_body_size(std::stringstream &ss)
 {
 	std::string word;
 	ss >> word;
@@ -73,7 +69,7 @@ void ParsingServer::max_body_size(std::stringstream &ss)
 	this->_max_body_size = max_body_size;
 }
 
-void ParsingServer::listen(std::stringstream &ss)
+void ServerConfig::listen(std::stringstream &ss)
 {
 	std::string word;
 	ss >> word;
@@ -87,7 +83,7 @@ void ParsingServer::listen(std::stringstream &ss)
 	this->_host = word;
 }
 
-void ParsingServer::port(std::stringstream& ss)
+void ServerConfig::port(std::stringstream& ss)
 {
 	std::string word;
 	ss >> word;
@@ -108,7 +104,7 @@ void ParsingServer::port(std::stringstream& ss)
 	this->_port = port;
 }
 
-void ParsingServer::server_name(std::stringstream& ss)
+void ServerConfig::server_name(std::stringstream& ss)
 {
 	std::string word;
 	ss >> word;
@@ -120,7 +116,7 @@ void ParsingServer::server_name(std::stringstream& ss)
 	this->_server_name = word;
 }
 
-void ParsingServer::error_page(std::stringstream& ss)
+void ServerConfig::error_page(std::stringstream& ss)
 {
 	std::string word;
 	ss >> word;
@@ -147,26 +143,26 @@ void ParsingServer::error_page(std::stringstream& ss)
 	this->_error_pages[code] = path;
 }
 
-int ParsingServer::getPort() const {
+int ServerConfig::getPort() const {
 	return _port;
 }
 
-const std::string &ParsingServer::getHost() const {
+const std::string &ServerConfig::getHost() const {
 	return _host;
 }
 
-const std::string &ParsingServer::getServerName() const {
+const std::string &ServerConfig::getServerName() const {
 	return _server_name;
 }
 
-const std::map<short, std::string> &ParsingServer::getErrorPages() const {
+const std::map<short, std::string> &ServerConfig::getErrorPages() const {
 	return _error_pages;
 }
 
-const std::vector<Location> &ParsingServer::getLocations() const {
+const std::vector<Location> &ServerConfig::getLocations() const {
 	return _locations;
 }
 
-unsigned long long int ParsingServer::getMaxBodySize() const {
+unsigned long long int ServerConfig::getMaxBodySize() const {
 	return _max_body_size;
 }

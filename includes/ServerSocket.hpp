@@ -1,17 +1,16 @@
-#ifndef WEBSERV_SOCKET_HPP
-#define WEBSERV_SOCKET_HPP
+#ifndef WEBSERV_SERVERSOCKET_HPP
+#define WEBSERV_SERVERSOCKET_HPP
 
 #include "WebServHeaders.hpp"
 
-class Socket {
+class ServerSocket {
 protected:
     struct sockaddr_in _addr;
     int _socket;
-    Socket(){};
+    ServerSocket(){};
 public:
-    Socket(std::string const &IP, int port);
-    Socket(std::string const &IP, int service, int protocol, int port, u_long interface);
-    virtual ~Socket(){};
+    ServerSocket(std::string const &IP, int port);
+    virtual ~ServerSocket(){};
 
     void bindSocket();
     void listenSocket();
@@ -26,4 +25,4 @@ public:
     bool operator==(const int &socket) const { return _socket == socket; };
 };
 
-#endif //WEBSERV_SOCKET_HPP
+#endif //WEBSERV_SERVERSOCKET_HPP
