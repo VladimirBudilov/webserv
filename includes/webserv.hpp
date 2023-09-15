@@ -12,6 +12,7 @@
 #include <sstream>
 #include <map>
 #include <cstdlib>
+#include <cctype>
 #include "Location.hpp"
 #include "Server.hpp"
 

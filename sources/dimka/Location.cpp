@@ -34,7 +34,7 @@ void Location::max_body_size(std::stringstream &ss)
 		std::cout << "Error, bad config file: " << word << std::endl;
 		exit(1);
 	}
-	for (int i = 0; i < word.size(); ++i)
+	for (int i = 0; i < static_cast<int>(word.size()); ++i)
 	{
 		char c = word[i];
 		if (!isdigit(c))
@@ -43,9 +43,9 @@ void Location::max_body_size(std::stringstream &ss)
 			exit(1);
 		}
 	}
-	ss << word;
+	std::stringstream sss(word);
 	unsigned long long max_body_size;
-	ss >> max_body_size;
+	sss >> max_body_size;
 	this->_max_body_size = max_body_size;
 }
 

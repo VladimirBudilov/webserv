@@ -13,6 +13,10 @@ Server::Server() {
 	this->_locations = std::vector<Location>();
 }
 
+/*std::vector<Location> &Server::getLocations() const {
+	return (std::vector<Location>&)this->_locations;
+}*/
+
 void Server::parseLocation(std::vector<std::string> &str, int& i)
 {
 	std::stringstream mss(str[i]);
@@ -24,14 +28,14 @@ void Server::parseLocation(std::vector<std::string> &str, int& i)
 		std::cout << "Error, bad config file: " << str[i] << std::endl;
 		exit(1);
 	}
-	if (path[0] != '/')
-	{
-		std::cout << "Error, bad config file: " << str[i] << std::endl;
-		exit(1);
-	}
+//	if (path[0] != '/')
+//	{
+//		std::cout << "Error, bad config file: " << str[i] << std::endl;
+//		exit(1);
+//	}
 	res.setPath(path);
 	i++;
-	while (str[i] != "\t}" && i < str.size()) {
+	while (str[i] != "}" && i < static_cast<int>(str.size())) {
 		std::stringstream ss(str[i]);
 		std::string word;
 		ss >> word;
@@ -51,15 +55,16 @@ void Server::parseLocation(std::vector<std::string> &str, int& i)
 			res.max_body_size(ss);
 		}
 		else {
-			std::cout << "Error, bad config file: " << str[i] << std::endl;
+			std::cout << "Error, bad config file3: " << str[i] << std::endl;
 			exit(1);
 		}
 		i++;
 	}
-	if (str[i] != "\t}") {
-		std::cout << "Error, bad config file: " << str[i] << std::endl;
+	if (str[i] != "}") {
+		std::cout << "Error, bad config file4: " << str[i] << std::endl;
 		exit(1);
 	}
+	this->_locations.push_back(res);
 }
 
 void Server::max_body_size(std::stringstream &ss)
@@ -77,7 +82,7 @@ void Server::max_body_size(std::stringstream &ss)
 		std::cout << "Error, bad config file: " << word << std::endl;
 		exit(1);
 	}
-	for (int i = 0; i < word.size(); ++i)
+	for (int i = 0; i < static_cast<int>(word.size()); ++i)
 	{
 		char c = word[i];
 		if (!isdigit(c))
@@ -86,9 +91,9 @@ void Server::max_body_size(std::stringstream &ss)
 			exit(1);
 		}
 	}
-	ss << word;
+	std::stringstream sss(word);
 	unsigned long long max_body_size;
-	ss >> max_body_size;
+	sss >> max_body_size;
 	this->_max_body_size = max_body_size;
 }
 
@@ -129,7 +134,7 @@ void Server::port(std::stringstream& ss)
 		exit(1);
 	}
 	word.erase(word.size() - 1);
-	for (int i = 0; i < word.size(); ++i)
+	for (int i = 0; i < static_cast<int>(word.size()); ++i)
 	{
 		char c = word[i];
 		if (!isdigit(c))
@@ -169,7 +174,7 @@ void Server::error_page(std::stringstream& ss)
 {
 	std::string word;
 	ss >> word;
-	for (int i = 0; i < word.size(); ++i)
+	for (int i = 0; i < static_cast<int>(word.size()); ++i)
 	{
 		char c = word[i];
 		if (!isdigit(c))

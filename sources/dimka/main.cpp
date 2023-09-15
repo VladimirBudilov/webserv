@@ -21,14 +21,19 @@ int main() {
 
 	std::vector<Server> servers;
 
-	for (int i = 0; i < lines.size(); ++i) {
+	for (int i = 0; i < static_cast<int>(lines.size()); ++i) {
 		if (lines[i] == "server {")
 			parseServer(lines, servers,i);
-		if (!lines[i].empty())
-		{
+		else {
 			std::cout << "Error, bad config file: " << lines[i] << std::endl;
 			exit(1);
 		}
+
+		/*if (!lines[i].empty())
+		{
+			std::cout << "Error, bad config file: " << lines[i] << std::endl;
+			exit(1);
+		}*/
 	}
 
 	return 0;
@@ -37,7 +42,7 @@ int main() {
 void parseServer(std::vector<std::string> &str, std::vector<Server>& servers, int& i) {
 	i++;
 	Server res;
-	while (str[i] != "}" && i < str.size()) {
+	while (str[i] != "}" && i < static_cast<int>(str.size())) {
 		std::stringstream ss(str[i]);
 		std::string word;
 		ss >> word;
@@ -73,7 +78,22 @@ void removeComments(std::vector<std::string> &str) {
 			str[i].erase(pos);
 		}
 	}
-	for (size_t i = 0; i < str.size(); i++) {
+
+	for (int i = 0; i < static_cast<int>(str.size()); ++i) {
+		while(isspace(str[i][0]))
+		{
+			str[i].erase(0, 1);
+		}
+	}
+
+	for (int i = 0; i < static_cast<int>(str.size()); ++i) {
+		while(str[i].size() != 0  && isspace( str[i][str[i].size() - 1]))
+		{
+			str[i].erase(str[i].size() - 1, 1);
+		}
+	}
+
+	for (int i = 0; i < static_cast<int>(str.size()); i++) {
 		if (str[i].empty()) {
 			str.erase(str.begin() + i);
 			i--;
@@ -88,7 +108,7 @@ bool isValidIP(const std::string& ip) {
 	while (std::getline(ss, segment, '.')) {
 		if (segment.empty() || segment.size() > 3 || (segment.size() > 1 && segment[0] == '0'))
 			return false;
-		for (int j = 0; j < segment.size(); ++j)
+		for (int j = 0; j < static_cast<int>(segment.size()); ++j)
 		{
 			char c = segment[j];
 			if (!isdigit(c))

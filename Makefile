@@ -8,7 +8,7 @@ LIBS     = -I./includes/
 # Compiled directories
 SRC = sources
 OBJ = objects
-SUBDIRS = core
+SUBDIRS = dimka
 
 # Folder directions
 SRC_DIR = $(foreach dir, $(SUBDIRS), $(addprefix $(SRC)/, $(dir)))
