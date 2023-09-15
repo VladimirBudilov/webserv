@@ -2,22 +2,27 @@
 #define WEBSERV_SERVER_HPP
 
 #include "WebServHeaders.hpp"
+#include "Socket.hpp"
+#include "ClientSocket.hpp"
+#include "EventManager.hpp"
+
 
 class Socket;
 class EventManager;
+class ClientSocket;
 
 class Server {
 private:
-    std::list<Socket> _listeningSockets;
-    std::list<Socket> _clientSockets;
     EventManager *_eventManager;
+    std::list<Socket> _serverSockets;
+    std::list<ClientSocket> _clientSockets;
 
 public:
 
     Server();
     ~Server(){};
 
-    void start(int port);
+    void start();
     void stop();
     void restart();
     void reload();
@@ -25,6 +30,9 @@ public:
     void configtest();
     void help();
     void version();
+
+    void addServerSocketsToEventManager();
+    void generateServerSockets();
 };
 
 

@@ -1,12 +1,10 @@
 #include "../../includes/WebServHeaders.hpp"
+#include "../../includes/Server.hpp"
 
-int main (int argc, char **argv)
+int main ()
 {
     Server server;
-    int port = 8080;
 
-    if (argc == 2)
-        port = atoi(argv[1]);
-    server.start(port);
+    server.start();
     return 0;
 }

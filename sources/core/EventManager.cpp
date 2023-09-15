@@ -2,7 +2,6 @@
 
 EventManager::EventManager() {
     _kq = kqueue();
-    std::cout << "kq = " << _kq << std::endl;
     if(_kq == -1) {
         perror("Ошибка при создании kqueue");
         exit(1);
@@ -19,7 +18,7 @@ std::string generateResponse() {
     return response.str();
 }
 
-void EventManager::registerEvent(int socket) {
+void EventManager::registerListeningEvent(int socket) {
 
     struct kevent event;
     EV_SET(&event, socket, EVFILT_READ, EV_ADD, 0, 0, NULL);
@@ -27,25 +26,11 @@ void EventManager::registerEvent(int socket) {
     _eventsList.push_back(event);
 }
 
-void EventManager::loop(std::list<Socket> &serverSockets) {
-
-    int clientSocket;
-    struct kevent clientInterest;
-    struct clientState {
-        std::string read;
-        size_t much_written;
-    } clientState;
+void EventManager::loop(std::list<Socket> &serverSockets, std::list<ClientSocket> &clientSockets) {
 
     std::string response = "Hello, world\n";
-
     while (true) {
-        int numEvents = kevent(_kq, NULL, 0, _eventsArr, maxEvents, NULL);
-        if (numEvents == -1) {
-            perror("Ошибка при ожидании событий в kqueue");
-            exit(1);
-        }
-
-        assert(numEvents == 1);
+        int numEvents = getEventNumbers();
 
         for (int i = 0; i < numEvents; ++i) {
             int socket = _eventsArr[i].ident;
@@ -53,53 +38,36 @@ void EventManager::loop(std::list<Socket> &serverSockets) {
             if (serverSockets.end() != std::find(serverSockets.begin(), serverSockets.end(), socket))
             {
                 std::cout << "event on server socket\n" << std::endl;
-                sockaddr_in clientAddr;
-                socklen_t clientAddrLen = sizeof(clientAddr);
-                clientSocket = accept(socket, (struct sockaddr *) &clientAddr, &clientAddrLen);
-
-                if (clientSocket == -1) {
-                    perror("Ошибка при принятии подключения");
-                }
-
-                std::cout << "Принято новое подключение\n";
-
-                // assert(fcntl(clientSocket, F_SETFL, O_NONBLOCK, FD_CLOEXEC) != -1);
-
-                EV_SET(&clientInterest, clientSocket , EVFILT_READ, EV_ADD, 0, 0, NULL);
-                kevent(_kq, &clientInterest, 1, NULL, 0, NULL);
+                ClientSocket clientSocket(socket, _kq);
+                clientSockets.push_back(clientSocket);
             }
-            else if (socket == clientSocket) {
+            else if (clientSockets.end() != std::find(clientSockets.begin(), clientSockets.end(), socket)) {
                 std::cout << "Event on client socket" << std::endl;
-
-                struct kevent event = _eventsArr[i];
+                ClientSocket clientSocket = *(std::find(clientSockets.begin(), clientSockets.end(), socket));
+                kEvent event = _eventsArr[i];
 
                 switch (event.filter) {
                 case EVFILT_READ: {
                     char *buf = (char *) malloc(event.data + 1);
                     assert(buf);
-
-                    recv(clientSocket, buf, event.data, 0);
-
+                    recv(clientSocket.getSocket(), buf, event.data, 0);
                     buf[event.data] = 0;
-
-                    clientState.read += buf;
-
-                    printf("read: %s\n", buf);
+                    clientSocket.Read(buf);
+                    printf("_read: %s\n", buf);
                     if (event.flags & EV_EOF) {
                         std::cout << "eof" << std::endl;
                         //clientState = {};
-                        close(clientSocket);
+                        close(clientSocket.getSocket());
                     }
 
                     free(buf);
 
-                    if (clientState.read == "get\n") {
+                    if (clientSocket.getRead() == "get\n") {
                         // int n = send(clientSocket, "ok\n", 3, 0);
                         std::cout << "need to respond" << std::endl;
-
-                        clientState.much_written = 0;
+                        clientSocket.MuchWritten(0);
                         struct kevent clientWrite;
-                        EV_SET(&clientWrite, clientSocket, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+                        EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_ADD, 0, 0, NULL);
                         kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
                     }
                     break;
@@ -107,41 +75,49 @@ void EventManager::loop(std::list<Socket> &serverSockets) {
                         case EVFILT_WRITE: {
 
                             assert(response.size() != 0);
-
                             int can_write = event.data;
                             int length = response.size();
-
-                            int much_left_to_write = length - clientState.much_written;
-
+                            int much_left_to_write = length - clientSocket.getMuchWritten();
                             if (can_write > much_left_to_write)
                                 can_write = much_left_to_write;
-
                             int much_written = send(
-                                    clientSocket,
-                                    (response.substr(clientState.much_written)).c_str(),
+                                    clientSocket.getSocket(),
+                                    (response.substr(clientSocket.getMuchWritten()).c_str()),
                                     can_write,
                                     0
                             );
 
                             assert(much_written == can_write);
 
-                            clientState.much_written += can_write;
-
-                            if (clientState.much_written == response.size()) {
+                            clientSocket.MuchWritten(can_write);
+                            if (clientSocket.getMuchWritten() == response.size()) {
                                 struct kevent clientWrite;
-                                EV_SET(&clientWrite, clientSocket, EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
+                                EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
                                 kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
                             }
                             break;
                         }
                 }
-
-
             }
         }
     }
 }
 
+int EventManager::getEventNumbers() {
+    int numEvents = kevent(_kq, NULL, 0, _eventsArr, maxEvents, NULL);
+    if (numEvents == -1) {
+        perror("Ошибка при ожидании событий в kqueue");
+        exit(1);
+    }
+    return numEvents;
+}
+
 int EventManager::getMaxEvents() const {
     return maxEvents;
 }
+
+int EventManager::getKq() const {
+    return _kq;
+}
+
+

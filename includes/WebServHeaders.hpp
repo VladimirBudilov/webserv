@@ -21,21 +21,12 @@
 #include <sys/resource.h>
 #include "algorithm"
 
-
-
-///Socket includes
-
 #include <netinet/in.h>
 #include "sys/socket.h"
 #include <sys/event.h>
 #include <unistd.h>
-#include "Socket.hpp"
-
-
-///Server includes
-#include "Server.hpp"
-
-#include "EventManager.hpp"
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 
 #endif //WEBSERV_WEBSERVHEADERS_HPP

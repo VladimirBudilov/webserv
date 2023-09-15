@@ -7,17 +7,22 @@ class Socket {
 protected:
     struct sockaddr_in _addr;
     int _socket;
+    Socket(){};
 public:
-    Socket(int domain, int service, int protocol, int port, u_long interface);
+    Socket(std::string const &IP, int port);
+    Socket(std::string const &IP, int service, int protocol, int port, u_long interface);
+    virtual ~Socket(){};
+
     void bindSocket();
     void listenSocket();
-
     void unlinkSocket();
 
     void checkSocket(int connection);
-    virtual ~Socket()=default;
-    int getSocket() const { return _socket; };
 
+    int getSocket() const { return _socket; };
+    struct sockaddr_in getAddr() { return _addr; };
+    void setSocket(int socket) { _socket = socket; };
+    void setAddr(struct sockaddr_in addr) { _addr = addr; };
     bool operator==(const int &socket) const { return _socket == socket; };
 };
 
