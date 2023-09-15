@@ -24,24 +24,15 @@ void Location::max_body_size(std::stringstream &ss)
 	std::string word;
 	ss >> word;
 	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	word.erase(word.size() - 1);
 	if (!ss.eof())
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	for (int i = 0; i < static_cast<int>(word.size()); ++i)
 	{
 		char c = word[i];
 		if (!isdigit(c))
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
+			configError();
 	}
 	std::stringstream sss(word);
 	unsigned long long max_body_size;
@@ -61,10 +52,7 @@ void Location::methods(std::stringstream &ss)
 		else if (word == "POST")
 			this->_methods[1] = true;
 		else
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
+			configError();
 	}
 	else
 	{
@@ -73,32 +61,20 @@ void Location::methods(std::stringstream &ss)
 		else if (word == "POST")
 			this->_methods[1] = true;
 		else
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
+			configError();
 		ss >> word;
 		if (word[word.size() - 1] != ';')
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
+			configError();
 		word.erase(word.size() - 1);
 		if (word == "GET")
 			this->_methods[0] = true;
 		else if (word == "POST")
 			this->_methods[1] = true;
 		else
-		{
-			std::cout << "Error, bad config file: " << word << std::endl;
-			exit(1);
-		}
+			configError();
 	}
 	if (!ss.eof())
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 }
 
 
@@ -107,25 +83,16 @@ void Location::file_upload(std::stringstream &ss)
 	std::string word;
 	ss >> word;
 	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	word.erase(word.size() - 1);
 	if (!ss.eof())
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	if (word == "on")
 		this->_file_upload = true;
 	else if (word == "off")
 		this->_file_upload = false;
 	else
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 }
 
 void Location::autoindex(std::stringstream &ss)
@@ -133,25 +100,16 @@ void Location::autoindex(std::stringstream &ss)
 	std::string word;
 	ss >> word;
 	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	word.erase(word.size() - 1);
 	if (!ss.eof())
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	if (word == "on")
 		this->_autoindex = true;
 	else if (word == "off")
 		this->_autoindex = false;
 	else
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 }
 
 void Location::cgi_pass(std::stringstream &ss)
@@ -159,15 +117,9 @@ void Location::cgi_pass(std::stringstream &ss)
 	std::string word;
 	ss >> word;
 	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	if (!ss.eof())
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	word.erase(word.size() - 1);
 	this->_cgi_pass = word;
 }
@@ -177,15 +129,9 @@ void Location::index(std::stringstream &ss)
 	std::string word;
 	ss >> word;
 	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	if (!ss.eof())
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	word.erase(word.size() - 1);
 	this->_index = word;
 }
@@ -195,10 +141,39 @@ void Location::root(std::stringstream &ss)
 	std::string word;
 	ss >> word;
 	if (word[word.size() - 1] != ';')
-	{
-		std::cout << "Error, bad config file: " << word << std::endl;
-		exit(1);
-	}
+		configError();
 	word.erase(word.size() - 1);
 	this->_root = word;
+}
+
+const std::string &Location::getPath() const {
+	return _path;
+}
+
+const std::string &Location::getRoot() const {
+	return _root;
+}
+
+const std::string &Location::getIndex() const {
+	return _index;
+}
+
+const std::string &Location::getCgiPass() const {
+	return _cgi_pass;
+}
+
+bool Location::isAutoindex() const {
+	return _autoindex;
+}
+
+bool Location::isFileUpload() const {
+	return _file_upload;
+}
+
+const std::vector<bool> &Location::getMethods() const {
+	return _methods;
+}
+
+unsigned long long int Location::getMaxBodySize() const {
+	return _max_body_size;
 }

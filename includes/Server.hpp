@@ -19,19 +19,13 @@ private:
 	unsigned long long _max_body_size;
 public:
 	Server();
-//	Server(const Server &other);
-//	Server &operator=(const Server &other);
-//	~Server();
 
-//	int getPort() const;
-//	const std::string &getHost() const;
-//	const std::string &getServerName() const;
-//	std::map<short, std::string> &getErrorPages() const;
-//	std::vector<Location> &getLocations() const;
-//	void setPort(int port);
-//	void setHost(const std::string &host);
-//	void setServerName(const std::string &serverName);
-//	void setErrorPages(const std::map<short, std::string> &errorPages);
+	int getPort() const;
+	const std::string &getHost() const;
+	const std::string &getServerName() const;
+	const std::map<short, std::string> &getErrorPages() const;
+	const std::vector<Location> &getLocations() const;
+	unsigned long long int getMaxBodySize() const;
 
 	void parseLocation(std::vector<std::string> &str, int& i);
 	void listen(std::stringstream &ss);

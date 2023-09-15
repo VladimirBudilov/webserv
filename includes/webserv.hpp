@@ -18,6 +18,7 @@
 
 void removeComments(std::vector<std::string> &str);
 void parseServer(std::vector<std::string> &str, std::vector<Server>& servers, int& i);
+void configError();
 bool isValidIP(const std::string& ip);
 
 #endif //WEBSERV_WEBSERV_HPP

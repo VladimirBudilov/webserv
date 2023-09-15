@@ -21,18 +21,16 @@ private:
 	unsigned long long _max_body_size;
 public:
 	Location();
-//	Location(const Location &other);
-//	Location &operator=(const Location &other);
-//	~Location();
 
 	void setPath(const std::string &path);
-//	void setRoot(const std::string &root);
-//	void setIndex(const std::string &index);
-//	void setCgiPass(const std::string &cgiPass);
-//	void setAutoindex(bool autoindex);
-//	void setFileUpload(bool fileUpload);
-//	std::vector<bool> &getMethods();
-//    void setMaxBodySize(unsigned long long maxBodySize);
+	const std::string &getPath() const;
+	const std::string &getRoot() const;
+	const std::string &getIndex() const;
+	const std::string &getCgiPass() const;
+	bool isAutoindex() const;
+	bool isFileUpload() const;
+	const std::vector<bool> &getMethods() const;
+	unsigned long long int getMaxBodySize() const;
 
 	void root(std::stringstream &ss);
 	void index(std::stringstream &ss);
