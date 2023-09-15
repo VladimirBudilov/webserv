@@ -1,7 +1,7 @@
 #include "../../includes/webserv.hpp"
 
 int main() {
-	std::ifstream infile("/Users/anatasha/MyProjects/webserv/webserv.conf");
+	std::ifstream infile("/Users/vbudilov/Desktop/WebServ/webserv/webserv.conf");
 	if (!infile.is_open())
 		configError();
 	std::vector<std::string> lines;
@@ -13,7 +13,7 @@ int main() {
 
 	removeComments(lines);
 
-	std::vector<Server> servers;
+	std::vector<ParsingServer> servers;
 
 	for (int i = 0; i < static_cast<int>(lines.size()); ++i) {
 		if (lines[i] == "server {")
@@ -29,9 +29,9 @@ void configError() {
 	exit(1);
 }
 
-void parseServer(std::vector<std::string> &str, std::vector<Server>& servers, int& i) {
+void parseServer(std::vector<std::string> &str, std::vector<ParsingServer>& servers, int& i) {
 	i++;
-	Server res;
+	ParsingServer res;
 	while (str[i] != "}" && i < static_cast<int>(str.size())) {
 		std::stringstream ss(str[i]);
 		std::string word;

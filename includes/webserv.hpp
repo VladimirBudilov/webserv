@@ -14,10 +14,10 @@
 #include <cstdlib>
 #include <cctype>
 #include "Location.hpp"
-#include "Server.hpp"
+#include "ParsingServer.hpp"
 
 void removeComments(std::vector<std::string> &str);
-void parseServer(std::vector<std::string> &str, std::vector<Server>& servers, int& i);
+void parseServer(std::vector<std::string> &str, std::vector<ParsingServer>& servers, int& i);
 void configError();
 bool isValidIP(const std::string& ip);
 
