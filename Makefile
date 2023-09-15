@@ -1,6 +1,6 @@
 NAME     = webserv
-GCC      = g++
-CFLAGS   = -Wall -Wextra -Werror -std=c++11 -g
+GCC      = c++
+CFLAGS   = -Wall -Wextra -Werror -std=c++98
 RM       = rm -rf
 OUTPUT   = ./$(NAME)
 LIBS     = -I./includes/
@@ -8,7 +8,7 @@ LIBS     = -I./includes/
 # Compiled directories
 SRC = sources
 OBJ = objects
-SUBDIRS = core
+SUBDIRS = dimka
 
 # Folder directions
 SRC_DIR = $(foreach dir, $(SUBDIRS), $(addprefix $(SRC)/, $(dir)))

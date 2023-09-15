@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(WebServ)
+project(webserv)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 98)
 
 # Compiled directories
-set(SRC webserv/sources)
-set(OBJ webserv/objects)
-set(SUBDIRS core)
+set(SRC webserv_github/sources)
+set(OBJ webserv_github/objects)
+set(SUBDIRS dimka)
 
 # Folder directions
 foreach(dir ${SUBDIRS})
