@@ -32,3 +32,9 @@ void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest)
     _clientInterest = clientInterest;
 }
 
+bool ClientSocket::isRequestReady() {
+    if(Request.RequestData == "get\n")
+        return true;
+    return false;
+}
+

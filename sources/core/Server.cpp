@@ -5,6 +5,7 @@ Server::Server() {
 }
 
 void Server::start() {
+    std::cout << "Server started" << std::endl;
     generateServerSockets();
     addServerSocketsToEventManager();
     _eventManager->loop(_serverSockets, _clientSockets);
@@ -18,7 +19,6 @@ void Server::addServerSocketsToEventManager() {
 }
 
 void Server::generateServerSockets() {
-    std::cout << "Server started" << std::endl;
     std::vector<ServerConfig>::iterator it = _serverConfigs.begin();
     std::set<std::pair<std::string, int> > uniquePairs;
     for (; it != _serverConfigs.end(); ++it)

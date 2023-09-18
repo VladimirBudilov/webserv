@@ -8,7 +8,7 @@ LIBS     = -I./includes/
 # Compiled directories
 SRC = sources
 OBJ = objects
-SUBDIRS = dimka core main
+SUBDIRS = dimka core main HTTP
 
 # Folder directions
 SRC_DIR = $(foreach dir, $(SUBDIRS), $(addprefix $(SRC)/, $(dir)))

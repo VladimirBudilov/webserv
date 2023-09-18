@@ -1,10 +1,5 @@
-//
-// Created by Andy Natasha on 9/12/23.
-//
-
 #ifndef WEBSERV_LOCATION_HPP
 #define WEBSERV_LOCATION_HPP
-
 
 #include <string>
 #include <vector>

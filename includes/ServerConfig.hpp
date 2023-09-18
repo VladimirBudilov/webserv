@@ -1,7 +1,3 @@
-//
-// Created by Andy Natasha on 9/11/23.
-//
-
 #ifndef WEBSERV_SERVERCONFIG_HPP
 #define WEBSERV_SERVERCONFIG_HPP
 
