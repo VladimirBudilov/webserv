@@ -24,6 +24,12 @@ private:
     kEvent _eventsArr[maxEvents];
 
     int getEventNumbers();
+
+    int getServerSocketFd(std::list<ServerSocket> &Sockets, int currentEventSocket) const;
+
+    int getClientSocketFd(std::list<ClientSocket> &Sockets, int currentEventSocket) const;
+
+    void validareEOF(const ClientSocket &clientSocket, const kEvent &event) const;
 };
 
 

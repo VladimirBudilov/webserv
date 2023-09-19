@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reload and Start CGI</title>
+</head>
+<body>
+<h1>Reload and Start CGI</h1>
+
+<!-- Reload Button -->
+<button onclick="reloadPage()">Reload</button>
+
+<!-- Start CGI Button -->
+<button onclick="startCGI()">Start CGI</button>
+
+<script>
+  // Reload the current page
+  function reloadPage() {
+    location.reload();
+  }
+
+  // You can replace the following URL with the actual CGI script you want to start
+  function startCGI() {
+    // Replace 'your-cgi-script-url' with the URL of your CGI script
+    var cgiScriptUrl = '/bin-cgi/data.py';
+
+    // Open the CGI script URL in a new window/tab
+    window.open(cgiScriptUrl);
+  }
+</script>
+</body>
+</html>
+

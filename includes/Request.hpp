@@ -6,6 +6,9 @@
 class Request {
 public:
     std::string RequestData;
+    std::string Method;
+
+    bool hasCGI();
 };
 
 

@@ -35,7 +35,11 @@ public:
         return _much_written;
     }
 
-    bool isRequestReady();
+    bool isValidRequest();
+
+    void generateCGIResponse();
+
+    void generateStaticResponse();
 };
 
 
