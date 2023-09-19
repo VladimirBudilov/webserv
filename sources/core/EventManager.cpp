@@ -29,27 +29,24 @@ void EventManager::loop(std::list<ServerSocket> &serverSockets, std::list<Client
                         validareEOF(clientSocket, event);
 
                         if (clientSocket.isValidRequest()) {
-                            std::cout << "need to respond" << std::endl;
-                            if(clientSocket.Request.hasCGI())
+                            if (clientSocket.Request.hasCGI())
                                 clientSocket.generateCGIResponse();
-                            else
-                            {
+                            else {
                                 clientSocket.generateStaticResponse();
                             }
-                            struct kevent clientWrite;
-                            EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-                            kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
+                            if(clientSocket.Response.ResponseData.size() > 0) {
+                                struct kevent clientWrite;
+                                EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+                                kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
+                            }
+                            struct kevent currentReadingevent;
+                            EV_SET(&currentReadingevent, clientSocket.getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+                            kevent(_kq, &currentReadingevent, 1, NULL, 0, NULL);
                         }
                         break;
                     }
                     case EVFILT_WRITE: {
-                        if(clientSocket.Response.ResponseData.size() == 0)
-                        {
-                            struct kevent clientWrite;
-                            EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-                            kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
-                            continue;
-                        }
+
                         int bufToWrite = 1024;
                         std::string response = clientSocket.Response.ResponseData;
                         int &sentLength = clientSocket.Response.sentLength;
@@ -63,17 +60,20 @@ void EventManager::loop(std::list<ServerSocket> &serverSockets, std::list<Client
                                 bufToWrite,
                                 0
                         );
-                        if(wasSent == bufToWrite)
-                        {
+                        if (wasSent >= bufToWrite) {
                             struct kevent clientWrite;
                             EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
                             kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
+                            close(clientSocket.getSocket());
+                            continue;
                         }
                         sentLength += wasSent;
-                        if (sentLength == length) {
+                        if (sentLength >= length) {
                             struct kevent clientWrite;
                             EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
                             kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
+                            close(clientSocket.getSocket());
+                            continue;
                         }
                         break;
                     }
