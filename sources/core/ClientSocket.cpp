@@ -93,6 +93,5 @@ void ClientSocket::generateStaticResponse() {
     Response.Body = response;
     Response.ResponseData = Response.Status + Response.Body;
     Response.sentLength = 0;
-
 }
 

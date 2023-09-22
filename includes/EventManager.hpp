@@ -13,8 +13,7 @@ public:
     EventManager();
     ~EventManager(){};
     void registerListeningEvent(int socket);
-    int getKq() const;
-    void loop(std::list<ServerSocket> &serverSockets, std::list<ClientSocket> &clientSockets);
+    void loop(std::vector<ServerSocket> &serverSockets, std::list<ClientSocket> &clientSockets);
     int getMaxEvents() const;
 private:
     static const int maxEvents = 63000;
@@ -23,13 +22,21 @@ private:
     std::list<kEvent> _eventsList;
     kEvent _eventsArr[maxEvents];
 
-    int getEventNumbers();
+    int getEventsNumber();
 
-    int getServerSocketFd(std::list<ServerSocket> &Sockets, int currentEventSocket) const;
+    int getServerSocketFd(std::vector<ServerSocket> &Sockets, int currentEventSocket) const;
 
     int getClientSocketFd(std::list<ClientSocket> &Sockets, int currentEventSocket) const;
 
     void validareEOF(const ClientSocket &clientSocket, const kEvent &event) const;
+
+    void addClientSocketEvent(const ClientSocket &clientSocket) const;
+
+    void RemoveCLientSocketEvent(const ClientSocket &clientSocket) const;
+
+    void readRequest(ClientSocket &clientSocket, const kEvent &event) const;
+
+    void writeResponse(ClientSocket &clientSocket) const;
 };
 
 

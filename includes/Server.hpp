@@ -16,7 +16,7 @@ class ServerConfig;
 class Server {
 private:
     EventManager *_eventManager;
-    std::list<ServerSocket> _serverSockets;
+    std::vector<ServerSocket> _serverSockets;
     std::list<ClientSocket> _clientSockets;
     std::vector<ServerConfig> _serverConfigs;
 public:

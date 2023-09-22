@@ -12,7 +12,7 @@ void Server::start() {
 }
 
 void Server::addServerSocketsToEventManager() {
-    std::list<ServerSocket>::iterator it = _serverSockets.begin();
+    std::vector<ServerSocket>::iterator it = _serverSockets.begin();
     for (; it != _serverSockets.end(); ++it) {
         _eventManager->registerListeningEvent(it->getSocket());
     }
@@ -39,9 +39,7 @@ void Server::parseConfigFile(const std::string &configFile) {
         lines.push_back(line);
     }
     infile.close();
-
     removeComments(lines);
-
     for (int i = 0; i < static_cast<int>(lines.size()); ++i) {
         if (lines[i] == "server {")
             parseServer(lines, _serverConfigs, i);

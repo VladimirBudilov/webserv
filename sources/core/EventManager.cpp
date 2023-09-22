@@ -1,86 +1,94 @@
 #include "EventManager.hpp"
 
-void EventManager::loop(std::list<ServerSocket> &serverSockets, std::list<ClientSocket> &clientSockets) {
-
+void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<ClientSocket> &clientSockets) {
     int serverSocketFd;
     int clientSocketFd;
     int currentEventSocketFd;
+    int eventsNumber;
     while (true) {
-        int numEvents = getEventNumbers();
-
-        for (int i = 0; i < numEvents; ++i) {
+        eventsNumber = getEventsNumber();
+        for (int i = 0; i < eventsNumber; ++i) {
+            /// get current event socket fd
             currentEventSocketFd = _eventsArr[i].ident;
             serverSocketFd = getServerSocketFd(serverSockets, currentEventSocketFd);
             clientSocketFd = getClientSocketFd(clientSockets, currentEventSocketFd);
             if (serverSocketFd != -1) {
-                /// new connection
+                /// new connection with server
                 ClientSocket clientSocket(currentEventSocketFd, _kq);
                 clientSockets.push_back(clientSocket);
+                /// client-server communication
             } else if (clientSocketFd != -1) {
                 ClientSocket &clientSocket = *(std::find(clientSockets.begin(), clientSockets.end(),
                                                          currentEventSocketFd));
                 kEvent event = _eventsArr[i];
                 switch (event.filter) {
+                    ///if client socket event on reading
                     case EVFILT_READ: {
-                        char buf[1024];
-                        int recived = recv(clientSocket.getSocket(), buf, sizeof(buf), 0);
-                        buf[recived] = '\0';
-                        clientSocket.Request.RequestData += buf;
-                        validareEOF(clientSocket, event);
-
-                        if (clientSocket.isValidRequest()) {
-                            if (clientSocket.Request.hasCGI())
-                                clientSocket.generateCGIResponse();
-                            else {
-                                clientSocket.generateStaticResponse();
-                            }
-                            if(clientSocket.Response.ResponseData.size() > 0) {
-                                struct kevent clientWrite;
-                                EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-                                kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
-                            }
-                            struct kevent currentReadingevent;
-                            EV_SET(&currentReadingevent, clientSocket.getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
-                            kevent(_kq, &currentReadingevent, 1, NULL, 0, NULL);
-                        }
+                        readRequest(clientSocket, event);
                         break;
                     }
+                    ///if client socket event on writing
                     case EVFILT_WRITE: {
-
-                        int bufToWrite = 1024;
-                        std::string response = clientSocket.Response.ResponseData;
-                        int &sentLength = clientSocket.Response.sentLength;
-                        int length = clientSocket.Response.ResponseData.size();
-                        int writingRemainder = length - clientSocket.Response.sentLength;
-                        if (bufToWrite > writingRemainder)
-                            bufToWrite = writingRemainder;
-                        int wasSent = send(
-                                clientSocket.getSocket(),
-                                (response.substr(sentLength).c_str()),
-                                bufToWrite,
-                                0
-                        );
-                        if (wasSent >= bufToWrite) {
-                            struct kevent clientWrite;
-                            EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-                            kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
-                            close(clientSocket.getSocket());
-                            continue;
-                        }
-                        sentLength += wasSent;
-                        if (sentLength >= length) {
-                            struct kevent clientWrite;
-                            EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_DELETE, 0, 0, NULL);
-                            kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
-                            close(clientSocket.getSocket());
-                            continue;
-                        }
+                        writeResponse(clientSocket);
                         break;
                     }
                 }
             }
         }
     }
+}
+
+void EventManager::writeResponse(ClientSocket &clientSocket) const {
+    int bufToWrite = 1024;
+    std::string response = clientSocket.Response.ResponseData;
+    int &sentLength = clientSocket.Response.sentLength;
+    int length = clientSocket.Response.ResponseData.size();
+    int writingRemainder = length - clientSocket.Response.sentLength;
+    if (bufToWrite > writingRemainder)
+        bufToWrite = writingRemainder;
+    int wasSent = send(
+            clientSocket.getSocket(),
+            (response.substr(sentLength).c_str()),
+            bufToWrite,
+            0
+    );
+    sentLength += wasSent;
+    if (sentLength >= length) {
+        RemoveCLientSocketEvent(clientSocket);
+        close(clientSocket.getSocket());
+    }
+}
+
+void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::kEvent &event) const {
+    char buf[1024];
+    int recived = recv(clientSocket.getSocket(), buf, sizeof(buf), 0);
+    buf[recived] = '\0';
+    clientSocket.Request.RequestData += buf;
+    validareEOF(clientSocket, event);
+
+    if (clientSocket.isValidRequest()) {
+        if (clientSocket.Request.hasCGI())
+            clientSocket.generateCGIResponse();
+        else {
+            clientSocket.generateStaticResponse();
+        }
+        if(clientSocket.Response.ResponseData.size() > 0) {
+            addClientSocketEvent(clientSocket);
+        }
+        RemoveCLientSocketEvent(clientSocket);
+    }
+}
+
+void EventManager::RemoveCLientSocketEvent(const ClientSocket &clientSocket) const {
+    struct kevent currentReadingevent;
+    EV_SET(&currentReadingevent, clientSocket.getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    kevent(_kq, &currentReadingevent, 1, NULL, 0, NULL);
+}
+
+void EventManager::addClientSocketEvent(const ClientSocket &clientSocket) const {
+    struct kevent clientWrite;
+    EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+    kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
 }
 
 
@@ -104,12 +112,12 @@ int EventManager::getClientSocketFd(std::list<ClientSocket> &Sockets, int curren
     return serverSocket != Sockets.end() ? (serverSocket->getSocket()) : -1;
 }
 
-int EventManager::getServerSocketFd(std::list<ServerSocket> &Sockets, int currentEventSocket) const {
-    std::list<ServerSocket>::iterator serverSocket = std::find(Sockets.begin(), Sockets.end(), currentEventSocket);
+int EventManager::getServerSocketFd(std::vector<ServerSocket> &Sockets, int currentEventSocket) const {
+    std::vector<ServerSocket>::iterator serverSocket = std::find(Sockets.begin(), Sockets.end(), currentEventSocket);
     return serverSocket != Sockets.end() ? (serverSocket->getSocket()) : -1;
 }
 
-int EventManager::getEventNumbers() {
+int EventManager::getEventsNumber() {
     int numEvents = kevent(_kq, NULL, 0, _eventsArr, maxEvents, NULL);
     if (numEvents == -1) {
         perror("Ошибка при ожидании событий в kqueue");
@@ -122,9 +130,6 @@ int EventManager::getMaxEvents() const {
     return maxEvents;
 }
 
-int EventManager::getKq() const {
-    return _kq;
-}
 
 EventManager::EventManager() {
     _kq = kqueue();
