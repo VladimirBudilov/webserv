@@ -40,36 +40,28 @@ void Location::methods(std::stringstream &ss)
 {
 	std::string word;
 	ss >> word;
-	if (word[word.size() - 1] == ';')
-	{
-		word.erase(word.size() - 1);
-		if (word == "GET")
-			this->_methods[0] = true;
-		else if (word == "POST")
-			this->_methods[1] = true;
-		else
-			configError();
-	}
-	else
+	while (!ss.eof())
 	{
 		if (word == "GET")
 			this->_methods[0] = true;
 		else if (word == "POST")
 			this->_methods[1] = true;
+		else if (word == "DELETE")
+			this->_methods[2] = true;
 		else
 			configError();
 		ss >> word;
-		if (word[word.size() - 1] != ';')
-			configError();
-		word.erase(word.size() - 1);
-		if (word == "GET")
-			this->_methods[0] = true;
-		else if (word == "POST")
-			this->_methods[1] = true;
-		else
-			configError();
 	}
-	if (!ss.eof())
+	if (word[word.size() - 1] != ';')
+		configError();
+	word.erase(word.size() - 1);
+	if (word == "GET")
+		this->_methods[0] = true;
+	else if (word == "POST")
+		this->_methods[1] = true;
+	else if (word == "DELETE")
+		this->_methods[2] = true;
+	else
 		configError();
 }
 
