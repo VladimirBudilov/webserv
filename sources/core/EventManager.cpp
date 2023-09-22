@@ -42,6 +42,7 @@ void EventManager::loop(std::list<ServerSocket> &serverSockets, std::list<Client
                         if (clientSocket.isRequestReady()) {
                             std::cout << "need to respond" << std::endl;
 
+							//TODO: запарсить запрос и сформировать ответ
 
                             clientSocket.Response.ResponseData = "HTTP/1.1 200 OK\n"
                                                                   "Server: webserv\n"

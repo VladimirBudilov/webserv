@@ -8,16 +8,16 @@ set(CMAKE_CXX_STANDARD 98)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror -I./webserv/includes")
 
 # Include directories
-include_directories(webserv/includes)
+include_directories(webserv_github/includes)
 
 # Link directories
-link_directories(${PROJECT_NAME}/webserv/includes/*.hpp)
+link_directories(${PROJECT_NAME}/webserv_github/includes/*.hpp)
 
 # Get source files from subdirectories
-file(GLOB SRCS webserv/sources/dimka/*.cpp webserv/sources/core/*.cpp webserv/sources/main/main.cpp webserv/sources/HTTP/*.cpp)
+file(GLOB SRCS webserv_github/sources/dimka/*.cpp webserv_github/sources/core/*.cpp webserv_github/sources/main/main.cpp webserv_github/sources/HTTP/*.cpp)
 
 # Create the executable
-add_executable(webserv ${SRCS})
+add_executable(webserv_github ${SRCS})
 
 # Link libraries
-target_include_directories(${PROJECT_NAME} PRIVATE webserv/includes/*.hpp)
+target_include_directories(${PROJECT_NAME} PRIVATE webserv_github/includes/*.hpp)
