@@ -14,12 +14,12 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
             clientSocketFd = getClientSocketFd(clientSockets, currentEventSocketFd);
             if (serverSocketFd != -1) {
                 /// new connection with server
-                ClientSocket clientSocket(currentEventSocketFd, _kq);
+                ClientSocket clientSocket(currentEventSocketFd, _kq, getServerSocketBySocketFd(serverSockets,
+                                                                                               currentEventSocketFd).getConfig());
                 clientSockets.push_back(clientSocket);
                 /// client-server communication
             } else if (clientSocketFd != -1) {
-                ClientSocket &clientSocket = *(std::find(clientSockets.begin(), clientSockets.end(),
-                                                         currentEventSocketFd));
+                ClientSocket &clientSocket = getClientSocketBySocketFd(clientSockets, currentEventSocketFd);
                 kEvent event = _eventsArr[i];
                 switch (event.filter) {
                     ///if client socket event on reading
@@ -27,9 +27,9 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
                         readRequest(clientSocket, event);
                         break;
                     }
-                    ///if client socket event on writing
+                        ///if client socket event on writing
                     case EVFILT_WRITE: {
-                        writeResponse(clientSocket);
+                        writeResponse(clientSocket, clientSockets);
                         break;
                     }
                 }
@@ -38,7 +38,7 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
     }
 }
 
-void EventManager::writeResponse(ClientSocket &clientSocket) const {
+void EventManager::writeResponse(ClientSocket &clientSocket, std::list<ClientSocket> &clientSockets) const {
     int bufToWrite = 1024;
     std::string response = clientSocket.Response.ResponseData;
     int &sentLength = clientSocket.Response.sentLength;
@@ -52,10 +52,12 @@ void EventManager::writeResponse(ClientSocket &clientSocket) const {
             bufToWrite,
             0
     );
+
     sentLength += wasSent;
     if (sentLength >= length) {
         RemoveCLientSocketEvent(clientSocket);
         close(clientSocket.getSocket());
+        clientSockets.remove(clientSocket);
     }
 }
 
@@ -72,7 +74,7 @@ void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::k
         else {
             clientSocket.generateStaticResponse();
         }
-        if(clientSocket.Response.ResponseData.size() > 0) {
+        if (clientSocket.Response.ResponseData.size() > 0) {
             addClientSocketEvent(clientSocket);
         }
         RemoveCLientSocketEvent(clientSocket);
@@ -91,7 +93,6 @@ void EventManager::addClientSocketEvent(const ClientSocket &clientSocket) const 
     kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
 }
 
-
 void EventManager::registerListeningEvent(int socket) {
 
     struct kevent event;
@@ -101,20 +102,10 @@ void EventManager::registerListeningEvent(int socket) {
 }
 
 void EventManager::validareEOF(const ClientSocket &clientSocket, const EventManager::kEvent &event) const {
-    if (event.flags & EV_EOF) {
+    if (event.flags & EV_EOF && clientSocket.Request.RequestData.size() == 0) {
         std::cout << "eof" << std::endl;
         close(clientSocket.getSocket());
     }
-}
-
-int EventManager::getClientSocketFd(std::list<ClientSocket> &Sockets, int currentEventSocket) const {
-    std::list<ClientSocket>::iterator serverSocket = std::find(Sockets.begin(), Sockets.end(), currentEventSocket);
-    return serverSocket != Sockets.end() ? (serverSocket->getSocket()) : -1;
-}
-
-int EventManager::getServerSocketFd(std::vector<ServerSocket> &Sockets, int currentEventSocket) const {
-    std::vector<ServerSocket>::iterator serverSocket = std::find(Sockets.begin(), Sockets.end(), currentEventSocket);
-    return serverSocket != Sockets.end() ? (serverSocket->getSocket()) : -1;
 }
 
 int EventManager::getEventsNumber() {
@@ -130,13 +121,50 @@ int EventManager::getMaxEvents() const {
     return maxEvents;
 }
 
-
 EventManager::EventManager() {
     _kq = kqueue();
     if (_kq == -1) {
         perror("Ошибка при создании kqueue");
         exit(1);
     }
+}
+
+int EventManager::getServerSocketFd(std::vector<ServerSocket> &Sockets, int currentEventSocket) const {
+    for (int i = 0; i < (int) Sockets.size(); ++i) {
+        if (Sockets[i].getSocket() == currentEventSocket) {
+            return currentEventSocket;
+        }
+    }
+    return -1;
+}
+
+ClientSocket &EventManager::getClientSocketBySocketFd(std::list<ClientSocket> &clientSockets, int fd) {
+    std::list<ClientSocket>::iterator it;
+    for (it = clientSockets.begin(); it != clientSockets.end(); ++it) {
+        if (it->getSocket() == fd) {
+            return *it;
+        }
+    }
+    return *it;
+}
+
+ServerSocket &EventManager::getServerSocketBySocketFd(std::vector<ServerSocket> &serverSockets, int fd) {
+    for (int i = 0; i < (int) serverSockets.size(); ++i) {
+        if (serverSockets[i].getSocket() == fd) {
+            return serverSockets[i];
+        }
+    }
+    return serverSockets[0];
+}
+
+int EventManager::getClientSocketFd(std::list<ClientSocket> &Sockets, int currentEventSocket) const {
+    std::list<ClientSocket>::iterator it;
+    for (it = Sockets.begin(); it != Sockets.end(); ++it) {
+        if (it->getSocket() == currentEventSocket) {
+            return currentEventSocket;
+        }
+    }
+    return -1;
 }
 
 

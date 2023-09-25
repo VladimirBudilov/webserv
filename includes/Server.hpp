@@ -36,7 +36,7 @@ public:
     const std::vector<ServerConfig> &getServerConfigs() const;
     void addServerSocketsToEventManager();
     void generateServerSockets();
-
+    ServerSocket &getServerSocketBySocketFd(int socket);
     std::vector<ServerConfig> getServerConfigsByHostAndPort(std::string host, int port);
 };
 

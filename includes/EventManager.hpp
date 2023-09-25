@@ -29,7 +29,11 @@ private:
     void addClientSocketEvent(const ClientSocket &clientSocket) const;
     void RemoveCLientSocketEvent(const ClientSocket &clientSocket) const;
     void readRequest(ClientSocket &clientSocket, const kEvent &event) const;
-    void writeResponse(ClientSocket &clientSocket) const;
+    void writeResponse(ClientSocket &clientSocket, std::list<ClientSocket> &clientSockets) const;
+
+    ClientSocket &getClientSocketBySocketFd(std::list<ClientSocket> &clientSockets, int fd);
+
+    ServerSocket & getServerSocketBySocketFd(std::vector<ServerSocket> &serverSockets, int fd);
 };
 
 

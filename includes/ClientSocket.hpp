@@ -17,13 +17,12 @@ private:
     kEvent _clientInterest;
     std::string _read;
     size_t _much_written;
-    ServerConfig *_serverConfig;
     ClientSocket(){}; // private default constructor
 
 public:
     Request Request;
     Response Response;
-    ClientSocket(int socket, int kq);
+    ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs);
 
     void setClientInterest(const kEvent &clientInterest);
     kEvent &getClientInterest();
@@ -45,6 +44,11 @@ public:
 
     void generateStaticResponse();
 
+    ClientSocket(const ClientSocket &socket);
+    ClientSocket &operator=(const ClientSocket &socket);
+    ~ClientSocket(){};
+    ///generate == operator
+    bool operator==(const ClientSocket &socket) const;
 };
 
 

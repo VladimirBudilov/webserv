@@ -12,8 +12,9 @@ void ClientSocket::MuchWritten(size_t muchWritten) {
     _much_written = muchWritten;
 }
 
-ClientSocket::ClientSocket(int socket, int kq) {
+ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs) {
 
+    _config = configs;
     struct sockaddr_in clientAddr;
     _socket = socket;
     _much_written = 0;
@@ -24,7 +25,6 @@ ClientSocket::ClientSocket(int socket, int kq) {
     fcntl(_socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
     EV_SET(&_clientInterest, _socket , EVFILT_READ, EV_ADD, 0, 0, NULL);
     kevent(kq, &_clientInterest, 1, NULL, 0, NULL);
-
 }
 
 void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest) {
@@ -32,7 +32,7 @@ void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest)
 }
 
 bool ClientSocket::isValidRequest() {
-    if(!(Request.RequestData[Request.RequestData.size() -1] == '\n' && Request.RequestData[Request.RequestData.size() -2] == '\n'))
+    if(Request.RequestData.empty())
         return false;
     Request.parse_request(Request.RequestData);
     if(Request.isVersion())
@@ -82,10 +82,20 @@ void ClientSocket::generateStaticResponse() {
 
     std::string root;
     ///go through config and find location
-
+    for (size_t i = 0; i < _config.size(); i++) {
+        std::vector<Location> locations = _config[i].getLocations();
+        for (size_t j = 0; j < locations.size(); j++) {
+            if (locations[j].getPath() == location) {
+                root = locations[j].getRoot();
+                break;
+            }
+        }
+    }
     if(root.empty())
     {
-        //return 404
+        Response.Status = "HTTP/1.1 404 Not Found\r\n";
+        Response.Body = "<html><body><h1>404 Not Found</h1></body></html>";
+        Response.ResponseData = Response.Status + Response.Body;
         return;
     }
     ///get current working directory
@@ -98,8 +108,6 @@ void ClientSocket::generateStaticResponse() {
     root.replace(found, sizeof("/FULL_PATH_TO_FILE/") - 1, cwd);
 
     ///get full location
-    std::cout << "location: " << location << std::endl;
-    std::cout << "root: " << root << std::endl;
     std::ifstream file(root.c_str());
     std::string str;
     std::string response;
@@ -117,6 +125,35 @@ void ClientSocket::generateStaticResponse() {
     }
     Response.Body = response;
     Response.ResponseData = Response.Status + Response.Body;
+
     Response.sentLength = 0;
+}
+
+ClientSocket::ClientSocket(const ClientSocket &socket)  : ServerSocket(socket) {
+    _socket = socket._socket;
+    _clientInterest = socket._clientInterest;
+    _config = socket._config;
+    _read = socket._read;
+    _much_written = socket._much_written;
+    Request = socket.Request;
+    Response = socket.Response;
+
+}
+
+ClientSocket &ClientSocket::operator=(const ClientSocket &socket) {
+    if (this == &socket)
+        return *this;
+    _socket = socket._socket;
+    _clientInterest = socket._clientInterest;
+    _config = socket._config;
+    _read = socket._read;
+    _much_written = socket._much_written;
+    Request = socket.Request;
+    Response = socket.Response;
+    return *this;
+}
+
+bool ClientSocket::operator==(const ClientSocket &socket) const {
+    return _socket == socket._socket;
 }
 

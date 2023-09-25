@@ -64,3 +64,12 @@ std::vector<ServerConfig> Server::getServerConfigsByHostAndPort(std::string host
     }
     return serverConfigs;
 }
+
+ServerSocket &Server::getServerSocketBySocketFd(int socket) {
+    std::vector<ServerSocket>::iterator it = _serverSockets.begin();
+    for (; it != _serverSockets.end(); ++it) {
+        if (it->getSocket() == socket)
+            return *it;
+    }
+    throw std::exception();
+}

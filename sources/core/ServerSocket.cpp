@@ -33,3 +33,24 @@ void ServerSocket::listenSocket() {
     checkSocket(listen(_socket, SOMAXCONN));
 }
 
+const std::vector<ServerConfig> &ServerSocket::getConfig() const {
+    return _config;
+}
+
+ServerSocket::ServerSocket(const ServerSocket &socket) {
+    *this = socket;
+
+}
+
+ServerSocket &ServerSocket::operator=(const ServerSocket &socket) {
+    if (this != &socket) {
+        _addr = socket._addr;
+        _socket = socket._socket;
+        _config = socket._config;
+    }
+    return *this;
+}
+
+bool ServerSocket::operator==(const ServerSocket &socket) const {
+    return _socket == socket._socket;
+}

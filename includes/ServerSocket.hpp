@@ -22,18 +22,16 @@ public:
 
     void checkSocket(int connection);
 
+    const std::vector<ServerConfig> &getConfig() const;
+
     int getSocket() const { return _socket; };
     struct sockaddr_in getAddr() { return _addr; };
     void setSocket(int socket) { _socket = socket; };
     void setAddr(struct sockaddr_in addr) { _addr = addr; };
-    bool operator==(const int &socket) const { return _socket == socket; };
 
-    typedef struct socketData
-    {
-        std::string ip;
-        int port;
-        ServerConfig config;
-    } t_socketData;
+    ServerSocket(const ServerSocket &socket);
+    ServerSocket &operator=(const ServerSocket &socket);
+    bool operator==(const ServerSocket &socket) const;
 };
 
 #endif //WEBSERV_SERVERSOCKET_HPP
