@@ -33,6 +33,7 @@ public:
     void help();
     void version();
 
+    const std::vector<ServerConfig> &getServerConfigs() const;
     void addServerSocketsToEventManager();
     void generateServerSockets();
 };

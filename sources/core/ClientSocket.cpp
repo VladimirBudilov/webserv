@@ -15,7 +15,6 @@ void ClientSocket::MuchWritten(size_t muchWritten) {
 ClientSocket::ClientSocket(int socket, int kq) {
 
     struct sockaddr_in clientAddr;
-
     _socket = socket;
     _much_written = 0;
     socklen_t clientAddrLen = sizeof(clientAddr);
@@ -33,8 +32,12 @@ void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest)
 }
 
 bool ClientSocket::isValidRequest() {
-    if(Request.RequestData[0] == 'G')
+    if(!(Request.RequestData[Request.RequestData.size() -1] == '\n' && Request.RequestData[Request.RequestData.size() -2] == '\n'))
+        return false;
+    Request.parse_request(Request.RequestData);
+    if(Request.isVersion())
         return true;
+    ///TODO add correct Request validation
     return false;
 }
 
@@ -74,8 +77,30 @@ void ClientSocket::generateCGIResponse() {
 }
 
 void ClientSocket::generateStaticResponse() {
-    std::string path = "/Users/vbudilov/Desktop/WebServ/webserv/www/staticHTML/index.html";
-    std::ifstream file(path.c_str());
+    std::string method = Request.getMethod();
+    std::string location = Request.getPath();
+
+    std::string root;
+    ///go through config and find location
+
+    if(root.empty())
+    {
+        //return 404
+        return;
+    }
+    ///get current working directory
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        perror("getcwd() error");
+        exit(1);
+    }
+    size_t found = root.find("/FULL_PATH_TO_FILE/");
+    root.replace(found, sizeof("/FULL_PATH_TO_FILE/") - 1, cwd);
+
+    ///get full location
+    std::cout << "location: " << location << std::endl;
+    std::cout << "root: " << root << std::endl;
+    std::ifstream file(root.c_str());
     std::string str;
     std::string response;
     if (file.is_open()) {

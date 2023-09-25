@@ -1,13 +1,13 @@
 #include "ServerSocket.hpp"
 
-ServerSocket::ServerSocket(std::string const &IP, int port) {
+ServerSocket::ServerSocket(std::string const &IP, int port, ServerConfig config) {
+    _config = config;
     in_addr_t addr = inet_addr(IP.c_str());
     _addr.sin_family = AF_INET;
     _addr.sin_port = htons(port);
     _addr.sin_addr.s_addr = addr;
     _socket = socket(AF_INET, SOCK_STREAM, 0);
     checkSocket(_socket);
-
     int opt = 1;
     if (setsockopt(_socket, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(int)) < 0) {
         perror("setsockopt");

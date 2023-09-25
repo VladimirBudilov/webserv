@@ -6,6 +6,10 @@
 #include "ServerSocket.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Server.hpp"
+#include "ServerConfig.hpp"
+
+class ServerConfig;
 
 class ClientSocket : public ServerSocket {
 private:
@@ -13,12 +17,12 @@ private:
     kEvent _clientInterest;
     std::string _read;
     size_t _much_written;
+    ServerConfig *_serverConfig;
     ClientSocket(){}; // private default constructor
-public:
 
+public:
     Request Request;
     Response Response;
-
     ClientSocket(int socket, int kq);
 
     void setClientInterest(const kEvent &clientInterest);
@@ -40,6 +44,7 @@ public:
     void generateCGIResponse();
 
     void generateStaticResponse();
+
 };
 
 

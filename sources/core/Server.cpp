@@ -20,13 +20,16 @@ void Server::addServerSocketsToEventManager() {
 
 void Server::generateServerSockets() {
     std::vector<ServerConfig>::iterator it = _serverConfigs.begin();
-    std::set<std::pair<std::string, int> > uniquePairs;
-    for (; it != _serverConfigs.end(); ++it)
-        uniquePairs.insert(std::make_pair(it->getHost(), it->getPort()));
-    std::set<std::pair<std::string, int> >::iterator it2 = uniquePairs.begin();
-    for (; it2 != uniquePairs.end(); ++it2) {
-        _serverSockets.push_back(ServerSocket(it2->first, it2->second));
+    std::vector<ClientSocket::t_socketData > uniqueSockets;
+
+    for (; it != _serverConfigs.end(); ++it) {
+        ClientSocket::t_socketData data;
+        data.port = it->getPort();
+        data.ip = it->getHost();
+        data.config = *it;
+        uniqueSockets.insert(data);
     }
+
 }
 
 void Server::parseConfigFile(const std::string &configFile) {
@@ -46,5 +49,8 @@ void Server::parseConfigFile(const std::string &configFile) {
         else
             configError();
     }
+}
 
+const std::vector<ServerConfig> &Server::getServerConfigs() const {
+    return _serverConfigs;
 }
