@@ -10,10 +10,10 @@ class ServerSocket {
 protected:
     struct sockaddr_in _addr;
     int _socket;
-    ServerConfig _config;
+    std::vector<ServerConfig> _config;
     ServerSocket(){};
 public:
-    ServerSocket(std::string const &IP, int port, ServerConfig config);
+    ServerSocket(std::string const &IP, int port, std::vector<ServerConfig> configs);
     virtual ~ServerSocket(){};
 
     void bindSocket();

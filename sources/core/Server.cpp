@@ -20,16 +20,16 @@ void Server::addServerSocketsToEventManager() {
 
 void Server::generateServerSockets() {
     std::vector<ServerConfig>::iterator it = _serverConfigs.begin();
-    std::vector<ClientSocket::t_socketData > uniqueSockets;
 
-    for (; it != _serverConfigs.end(); ++it) {
-        ClientSocket::t_socketData data;
-        data.port = it->getPort();
-        data.ip = it->getHost();
-        data.config = *it;
-        uniqueSockets.insert(data);
+    std::set<std::pair<std::string, int> > uniquePairs;
+    for (; it != _serverConfigs.end(); ++it)
+        uniquePairs.insert(std::make_pair(it->getHost(), it->getPort()));
+    std::set<std::pair<std::string, int> >::iterator it2 = uniquePairs.begin();
+    for (; it2 != uniquePairs.end(); ++it2) {
+        std::vector<ServerConfig> serverConfigs = getServerConfigsByHostAndPort(it2->first, it2->second);
+        ServerSocket serverSocket(it2->first, it2->second, serverConfigs);
+        _serverSockets.push_back(serverSocket);
     }
-
 }
 
 void Server::parseConfigFile(const std::string &configFile) {
@@ -53,4 +53,14 @@ void Server::parseConfigFile(const std::string &configFile) {
 
 const std::vector<ServerConfig> &Server::getServerConfigs() const {
     return _serverConfigs;
+}
+
+std::vector<ServerConfig> Server::getServerConfigsByHostAndPort(std::string host, int port) {
+    std::vector<ServerConfig> serverConfigs;
+    std::vector<ServerConfig>::iterator it = _serverConfigs.begin();
+    for (; it != _serverConfigs.end(); ++it) {
+        if (it->getHost() == host && it->getPort() == port)
+            serverConfigs.push_back(*it);
+    }
+    return serverConfigs;
 }
