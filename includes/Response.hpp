@@ -11,6 +11,7 @@ public:
     std::string Status;
     std::string Body;
 
+    void generateErrorStatus(int code);
     Response();
 };
 

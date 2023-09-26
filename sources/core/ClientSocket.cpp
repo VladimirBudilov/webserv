@@ -1,4 +1,5 @@
 #include "ClientSocket.hpp"
+#include "DataStorage.hpp"
 
 ClientSocket::kEvent &ClientSocket::getClientInterest() {
     return _clientInterest;
@@ -143,20 +144,15 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
 void ClientSocket::generateErrorPage(const ServerConfig &currentConfig) {
     std::__1::map<short, std::string> errors =  currentConfig.getErrorPages();
     std::__1::map<short, std::string>::iterator it = errors.find(404);
-    Response.Status = "HTTP/1.1 404 Not Found\r\n\n";
+    Response.generateErrorStatus(404);
     std::string errorRoot = it->second;
     getFoolPath(errorRoot);
     getErrorPageData(errorRoot);
 }
 
 void ClientSocket::getFoolPath(std::string &pathToUpdate) const {
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        perror("getcwd() error");
-        exit(1);
-    }
     size_t found = pathToUpdate.find("/FULL_PATH_TO_FILE");
-    pathToUpdate.replace(found, sizeof("/FULL_PATH_TO_FILE") - 1, cwd);
+    pathToUpdate.replace(found, sizeof("/FULL_PATH_TO_FILE") - 1, DataStorage::root);
 }
 
 ClientSocket::ClientSocket(const ClientSocket &socket)  : ServerSocket(socket) {
