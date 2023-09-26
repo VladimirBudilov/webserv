@@ -14,8 +14,7 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
             clientSocketFd = getClientSocketFd(clientSockets, currentEventSocketFd);
             if (serverSocketFd != -1) {
                 /// new connection with server
-                ClientSocket clientSocket(currentEventSocketFd, _kq, getServerSocketBySocketFd(serverSockets,
-                                                                                               currentEventSocketFd).getConfig());
+                ClientSocket clientSocket(currentEventSocketFd, _kq, getServerSocketBySocketFd(serverSockets,currentEventSocketFd).getConfig());
                 clientSockets.push_back(clientSocket);
                 /// client-server communication
             } else if (clientSocketFd != -1) {
@@ -91,6 +90,7 @@ void EventManager::addClientSocketEvent(const ClientSocket &clientSocket) const 
     struct kevent clientWrite;
     EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_ADD, 0, 0, NULL);
     kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
+    std::cout << "Request: " << clientSocket.Request.RequestData << std::endl;
 }
 
 void EventManager::registerListeningEvent(int socket) {
@@ -145,6 +145,7 @@ ClientSocket &EventManager::getClientSocketBySocketFd(std::list<ClientSocket> &c
             return *it;
         }
     }
+    throw std::runtime_error("Client socket not found");
     return *it;
 }
 
@@ -154,6 +155,7 @@ ServerSocket &EventManager::getServerSocketBySocketFd(std::vector<ServerSocket> 
             return serverSockets[i];
         }
     }
+    throw std::runtime_error("Server socket not found");
     return serverSockets[0];
 }
 

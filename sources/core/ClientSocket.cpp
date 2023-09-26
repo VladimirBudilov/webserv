@@ -34,7 +34,7 @@ void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest)
 bool ClientSocket::isValidRequest() {
     if(Request.RequestData.empty())
         return false;
-    Request.parse_request(Request.RequestData);
+    Request. parse_request(Request.RequestData);
     if(Request.isVersion())
         return true;
     ///TODO add correct Request validation

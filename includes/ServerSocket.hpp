@@ -13,7 +13,7 @@ protected:
     std::vector<ServerConfig> _config;
     ServerSocket(){};
 public:
-    ServerSocket(std::string const &IP, int port, std::vector<ServerConfig> configs);
+    ServerSocket(std::string const &IP, int port, const std::vector<ServerConfig>& configs);
     virtual ~ServerSocket(){};
 
     void bindSocket();

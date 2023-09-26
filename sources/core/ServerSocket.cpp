@@ -1,6 +1,6 @@
 #include "ServerSocket.hpp"
 
-ServerSocket::ServerSocket(std::string const &IP, int port, std::vector<ServerConfig> configs) {
+ServerSocket::ServerSocket(std::string const &IP, int port, const std::vector<ServerConfig>& configs) {
     _config = configs;
     in_addr_t addr = inet_addr(IP.c_str());
     _addr.sin_family = AF_INET;
