@@ -23,7 +23,7 @@ void ServerConfig::parseLocation(std::vector<std::string> &str, int& i)
 	i++;
 	while (str[i] != "}" && i < static_cast<int>(str.size())) {
 		std::stringstream ss(str[i]);
-		std::string word;
+		//std::string word;
 		ss >> word;
 		if (word == "root")
 			res.root(ss);
