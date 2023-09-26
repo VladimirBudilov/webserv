@@ -6,6 +6,10 @@
 #include "ServerSocket.hpp"
 #include "Request.hpp"
 #include "Response.hpp"
+#include "Server.hpp"
+#include "ServerConfig.hpp"
+
+class ServerConfig;
 
 class ClientSocket : public ServerSocket {
 private:
@@ -14,12 +18,11 @@ private:
     std::string _read;
     size_t _much_written;
     ClientSocket(){}; // private default constructor
-public:
 
+public:
     Request Request;
     Response Response;
-
-    ClientSocket(int socket, int kq);
+    ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs);
 
     void setClientInterest(const kEvent &clientInterest);
     kEvent &getClientInterest();
@@ -35,7 +38,25 @@ public:
         return _much_written;
     }
 
-    bool isRequestReady();
+    bool isValidRequest();
+
+    void generateCGIResponse();
+
+    void generateStaticResponse();
+
+    ClientSocket(const ClientSocket &socket);
+    ClientSocket &operator=(const ClientSocket &socket);
+    ~ClientSocket(){};
+    ///generate == operator
+    bool operator==(const ClientSocket &socket) const;
+
+    void getFoolPath(std::string &pathToUpdate) const;
+
+    void getDataByFullPath(const std::string &path, const ServerConfig &currentConfig);
+
+    void getErrorPageData(const std::string &errorRoot);
+
+    void generateErrorPage(const ServerConfig &currentConfig);
 };
 
 

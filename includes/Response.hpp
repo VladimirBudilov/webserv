@@ -8,7 +8,10 @@ class Response {
 public:
     std::string ResponseData;
     int sentLength;
+    std::string Status;
+    std::string Body;
 
+    Response();
 };
 
 

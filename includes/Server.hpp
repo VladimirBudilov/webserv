@@ -16,7 +16,7 @@ class ServerConfig;
 class Server {
 private:
     EventManager *_eventManager;
-    std::list<ServerSocket> _serverSockets;
+    std::vector<ServerSocket> _serverSockets;
     std::list<ClientSocket> _clientSockets;
     std::vector<ServerConfig> _serverConfigs;
 public:
@@ -33,8 +33,11 @@ public:
     void help();
     void version();
 
+    const std::vector<ServerConfig> &getServerConfigs() const;
     void addServerSocketsToEventManager();
     void generateServerSockets();
+    ServerSocket &getServerSocketBySocketFd(int socket);
+    std::vector<ServerConfig> getServerConfigsByHostAndPort(std::string host, int port);
 };
 
 
