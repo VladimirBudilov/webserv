@@ -42,8 +42,11 @@ bool ClientSocket::isValidRequest() {
 }
 
 void ClientSocket::generateCGIResponse() {
+
+
+
     const char *pythonScriptPath = "/Users/vbudilov/Desktop/WebServ/webserv/www/bin-cgi/data.py";
-    const char *pythonInterpreter = "/usr/bin/python2.7"; // Путь к интерпретатору Python
+    const char *pythonInterpreter = "/usr/local/bin/python3"; // Путь к интерпретатору Python
 
     // Аргументы для Python скрипта
     char *const pythonArgs[] = {const_cast<char *>(pythonInterpreter),
@@ -113,7 +116,8 @@ void ClientSocket::generateStaticResponse() {
         return;
     }
     ///create response for index
-    root += currentLocation.getIndex();
+    if(root[root.size() - 1] == '/')
+        root += currentLocation.getIndex();
     getFoolPath(root);
     getDataByFullPath(root, currentConfig);
 }
