@@ -3,7 +3,7 @@
 Location::Location() {
 	_path = std::string();
 	_root = std::string();
-	_index =std::string();
+	_index ="index.html";
 	_cgi_pass = std::string();
 	_autoindex = false;
 	_file_upload = false;
