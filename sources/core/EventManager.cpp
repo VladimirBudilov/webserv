@@ -24,6 +24,7 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
                     ///if client socket event on reading
                     case EVFILT_READ: {
                         readRequest(clientSocket, event);
+                        createResponse(clientSocket);
                         break;
                     }
                         ///if client socket event on writing
@@ -51,7 +52,6 @@ void EventManager::writeResponse(ClientSocket &clientSocket, std::list<ClientSoc
             bufToWrite,
             0
     );
-
     sentLength += wasSent;
     if (sentLength >= length) {
         RemoveCLientSocketEvent(clientSocket);
@@ -66,18 +66,18 @@ void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::k
     buf[recived] = '\0';
     clientSocket.Request.RequestData += buf;
     validareEOF(clientSocket, event);
+}
 
-    if (clientSocket.isValidRequest()) {
-        if (clientSocket.Request.hasCGI())
-            clientSocket.generateCGIResponse();
-        else {
-            clientSocket.generateStaticResponse();
-        }
-        if (clientSocket.Response.ResponseData.size() > 0) {
-            addClientSocketEvent(clientSocket);
-        }
-        RemoveCLientSocketEvent(clientSocket);
-    }
+void EventManager::createResponse(ClientSocket &clientSocket) const {
+    if (!clientSocket.isValidRequest())
+        return;
+    if (clientSocket.Request.hasCGI())
+        clientSocket.generateCGIResponse();
+    else
+        clientSocket.generateStaticResponse();
+    if (clientSocket.Response.ResponseData.size() > 0)
+        addClientSocketEvent(clientSocket);
+    RemoveCLientSocketEvent(clientSocket);
 }
 
 void EventManager::RemoveCLientSocketEvent(const ClientSocket &clientSocket) const {
@@ -90,11 +90,9 @@ void EventManager::addClientSocketEvent(const ClientSocket &clientSocket) const 
     struct kevent clientWrite;
     EV_SET(&clientWrite, clientSocket.getSocket(), EVFILT_WRITE, EV_ADD, 0, 0, NULL);
     kevent(_kq, &clientWrite, 1, NULL, 0, NULL);
-    std::cout << "Request: " << clientSocket.Request.RequestData << std::endl;
 }
 
 void EventManager::registerListeningEvent(int socket) {
-
     struct kevent event;
     EV_SET(&event, socket, EVFILT_READ, EV_ADD, 0, 0, NULL);
     kevent(_kq, &event, 1, NULL, 0, NULL);
@@ -146,7 +144,6 @@ ClientSocket &EventManager::getClientSocketBySocketFd(std::list<ClientSocket> &c
         }
     }
     throw std::runtime_error("Client socket not found");
-    return *it;
 }
 
 ServerSocket &EventManager::getServerSocketBySocketFd(std::vector<ServerSocket> &serverSockets, int fd) {
@@ -156,7 +153,6 @@ ServerSocket &EventManager::getServerSocketBySocketFd(std::vector<ServerSocket> 
         }
     }
     throw std::runtime_error("Server socket not found");
-    return serverSockets[0];
 }
 
 int EventManager::getClientSocketFd(std::list<ClientSocket> &Sockets, int currentEventSocket) const {

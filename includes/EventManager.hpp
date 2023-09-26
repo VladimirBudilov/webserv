@@ -34,6 +34,8 @@ private:
     ClientSocket &getClientSocketBySocketFd(std::list<ClientSocket> &clientSockets, int fd);
 
     ServerSocket & getServerSocketBySocketFd(std::vector<ServerSocket> &serverSockets, int fd);
+
+    void createResponse(ClientSocket &clientSocket) const;
 };
 
 

@@ -52,7 +52,11 @@ public:
 
     void getFoolPath(std::string &pathToUpdate) const;
 
-    void getDataByFullPath(const std::string &path);
+    void getDataByFullPath(const std::string &path, const ServerConfig &currentConfig);
+
+    void getErrorPageData(const std::string &errorRoot);
+
+    void generateErrorPage(const ServerConfig &currentConfig);
 };
 
 

@@ -83,53 +83,42 @@ void ClientSocket::generateStaticResponse() {
     Location currentLocation;
 
     std::string root;
-    ///go through config and find location
-    for (size_t i = 0; i < _config.size(); i++) {
-        std::vector<Location> locations = _config[i].getLocations();
-        currentConfig = _config[i];
-        for (size_t j = 0; j < locations.size(); j++) {
-            if (locations[j].getPath() == location) {
-                root = locations[j].getRoot();
-                currentLocation = locations[j];
-                break;
-            }
+
+    ///TODO find way to choose correct config?
+
+    ///TODO check method
+
+    ///go through first config and find location
+    std::vector<Location> locations = _config[0].getLocations();
+    currentConfig = _config[0];
+    for (size_t j = 0; j < locations.size(); j++) {
+        if (locations[j].getPath() == location) {
+            root = locations[j].getRoot();
+            currentLocation = locations[j];
+            break;
         }
+    }
+    ///create response for autoindex
+    if(currentLocation.isAutoindex())
+    {
+        std::cout << "autoindex" << std::endl;
+        ///TODO add autoindex
+        return;
     }
     if(root.empty())
     {
-        Response.Status = "HTTP/1.1 404 Not Found\r\n";
-        Response.Body = "<html><body><h1>404 Not Found</h1></body></html>";
-        Response.ResponseData = Response.Status + Response.Body;
-        return;
-    }
-    ///get current working directory
-    getFoolPath(root);
-    ///check config for index or autoindex
-    if(currentLocation.isAutoindex())
-    {
-        /// generate autoindex
-        std::cout << "autoindex" << std::endl;
-        return;
-    }
-    if(currentLocation.getIndex().empty())
-    {
-        ///get vector of errors from config
-        ///generate error page
+        ///TODO add error page
         std::cout << "error page" << std::endl;
-        std::map<short, std::string> errors =  currentConfig.getErrorPages();
-        std::map<short, std::string>::iterator it = errors.find(404);
-        Response.Status = "HTTP/1.1 404 Not Found\r\n";
-        std::string errorRoot = it->second;
-        getFoolPath(errorRoot);
-        getDataByFullPath(errorRoot);
-        Response.ResponseData = Response.Status + Response.Body;
+        generateErrorPage(currentConfig);
         return;
     }
-    ///get data from file
-    getDataByFullPath(root);
+    ///create response for index
+    root += currentLocation.getIndex();
+    getFoolPath(root);
+    getDataByFullPath(root, currentConfig);
 }
 
-void ClientSocket::getDataByFullPath(const std::string &path) {
+void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig &currentConfig) {
     std::ifstream file(path.c_str());
     std::string str;
     std::string response;
@@ -139,14 +128,21 @@ void ClientSocket::getDataByFullPath(const std::string &path) {
         }
         file.close();
     } else {
-        Response.Status = "HTTP/1.1 404 Not Found\r\n";
-        Response.Body = "<html><body><h1>404 Not Found</h1></body></html>";
-        Response.ResponseData = Response.Status + Response.Body;
-        Response.sentLength = 0;
+        generateErrorPage(currentConfig);
+        return;
     }
     Response.Body = response;
     Response.ResponseData = Response.Status + Response.Body;
     Response.sentLength = 0;
+}
+
+void ClientSocket::generateErrorPage(const ServerConfig &currentConfig) {
+    std::__1::map<short, std::string> errors =  currentConfig.getErrorPages();
+    std::__1::map<short, std::string>::iterator it = errors.find(404);
+    Response.Status = "HTTP/1.1 404 Not Found\r\n\n";
+    std::string errorRoot = it->second;
+    getFoolPath(errorRoot);
+    getErrorPageData(errorRoot);
 }
 
 void ClientSocket::getFoolPath(std::string &pathToUpdate) const {
@@ -155,8 +151,8 @@ void ClientSocket::getFoolPath(std::string &pathToUpdate) const {
         perror("getcwd() error");
         exit(1);
     }
-    size_t found = pathToUpdate.find("/FULL_PATH_TO_FILE/");
-    pathToUpdate.replace(found, sizeof("/FULL_PATH_TO_FILE/") - 1, cwd);
+    size_t found = pathToUpdate.find("/FULL_PATH_TO_FILE");
+    pathToUpdate.replace(found, sizeof("/FULL_PATH_TO_FILE") - 1, cwd);
 }
 
 ClientSocket::ClientSocket(const ClientSocket &socket)  : ServerSocket(socket) {
@@ -167,7 +163,6 @@ ClientSocket::ClientSocket(const ClientSocket &socket)  : ServerSocket(socket) {
     _much_written = socket._much_written;
     Request = socket.Request;
     Response = socket.Response;
-
 }
 
 ClientSocket &ClientSocket::operator=(const ClientSocket &socket) {
@@ -185,5 +180,26 @@ ClientSocket &ClientSocket::operator=(const ClientSocket &socket) {
 
 bool ClientSocket::operator==(const ClientSocket &socket) const {
     return _socket == socket._socket;
+}
+
+void ClientSocket::getErrorPageData(const std::string &errorRoot) {
+    std::ifstream file(errorRoot.c_str());
+    std::string str;
+    std::string response;
+    if (file.is_open()) {
+        while (std::getline(file, str)) {
+            response += str + "\n";
+        }
+        file.close();
+    } else {
+        //generate error page
+        std::cout << "error page" << std::endl;
+        Response.Body = "Error page not found";
+        Response.ResponseData = Response.Status + Response.Body;
+        return;
+    }
+    Response.Body = response;
+    Response.ResponseData = Response.Status + Response.Body;
+    Response.sentLength = 0;
 }
 
