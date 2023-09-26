@@ -79,14 +79,18 @@ void ClientSocket::generateCGIResponse() {
 void ClientSocket::generateStaticResponse() {
     std::string method = Request.getMethod();
     std::string location = Request.getPath();
+    ServerConfig currentConfig;
+    Location currentLocation;
 
     std::string root;
     ///go through config and find location
     for (size_t i = 0; i < _config.size(); i++) {
         std::vector<Location> locations = _config[i].getLocations();
+        currentConfig = _config[i];
         for (size_t j = 0; j < locations.size(); j++) {
             if (locations[j].getPath() == location) {
                 root = locations[j].getRoot();
+                currentLocation = locations[j];
                 break;
             }
         }
@@ -99,16 +103,34 @@ void ClientSocket::generateStaticResponse() {
         return;
     }
     ///get current working directory
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        perror("getcwd() error");
-        exit(1);
+    getFoolPath(root);
+    ///check config for index or autoindex
+    if(currentLocation.isAutoindex())
+    {
+        /// generate autoindex
+        std::cout << "autoindex" << std::endl;
+        return;
     }
-    size_t found = root.find("/FULL_PATH_TO_FILE/");
-    root.replace(found, sizeof("/FULL_PATH_TO_FILE/") - 1, cwd);
+    if(currentLocation.getIndex().empty())
+    {
+        ///get vector of errors from config
+        ///generate error page
+        std::cout << "error page" << std::endl;
+        std::map<short, std::string> errors =  currentConfig.getErrorPages();
+        std::map<short, std::string>::iterator it = errors.find(404);
+        Response.Status = "HTTP/1.1 404 Not Found\r\n";
+        std::string errorRoot = it->second;
+        getFoolPath(errorRoot);
+        getDataByFullPath(errorRoot);
+        Response.ResponseData = Response.Status + Response.Body;
+        return;
+    }
+    ///get data from file
+    getDataByFullPath(root);
+}
 
-    ///get full location
-    std::ifstream file(root.c_str());
+void ClientSocket::getDataByFullPath(const std::string &path) {
+    std::ifstream file(path.c_str());
     std::string str;
     std::string response;
     if (file.is_open()) {
@@ -121,12 +143,20 @@ void ClientSocket::generateStaticResponse() {
         Response.Body = "<html><body><h1>404 Not Found</h1></body></html>";
         Response.ResponseData = Response.Status + Response.Body;
         Response.sentLength = 0;
-        return;
     }
     Response.Body = response;
     Response.ResponseData = Response.Status + Response.Body;
-
     Response.sentLength = 0;
+}
+
+void ClientSocket::getFoolPath(std::string &pathToUpdate) const {
+    char cwd[PATH_MAX];
+    if (getcwd(cwd, sizeof(cwd)) == NULL) {
+        perror("getcwd() error");
+        exit(1);
+    }
+    size_t found = pathToUpdate.find("/FULL_PATH_TO_FILE/");
+    pathToUpdate.replace(found, sizeof("/FULL_PATH_TO_FILE/") - 1, cwd);
 }
 
 ClientSocket::ClientSocket(const ClientSocket &socket)  : ServerSocket(socket) {

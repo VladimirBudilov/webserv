@@ -49,6 +49,10 @@ public:
     ~ClientSocket(){};
     ///generate == operator
     bool operator==(const ClientSocket &socket) const;
+
+    void getFoolPath(std::string &pathToUpdate) const;
+
+    void getDataByFullPath(const std::string &path);
 };
 
 
