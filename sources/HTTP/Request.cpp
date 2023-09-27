@@ -103,3 +103,7 @@ const std::map<std::string, std::string> &Request::getHeaders() const {
 const std::string &Request::getBody() const {
     return body;
 }
+
+const std::map<std::string, std::string> &Request::getArgs() const {
+    return args;
+}

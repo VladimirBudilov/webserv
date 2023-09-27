@@ -18,6 +18,7 @@ public:
     const std::map<std::string, std::string> &getHeaders() const;
 
     const std::string &getBody() const;
+    const std::map<std::string, std::string> &getArgs() const;
 
 private:
     std::string method;

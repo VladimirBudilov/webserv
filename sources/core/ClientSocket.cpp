@@ -14,7 +14,6 @@ void ClientSocket::MuchWritten(size_t muchWritten) {
 }
 
 ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs) {
-
     _config = configs;
     struct sockaddr_in clientAddr;
     _socket = socket;
@@ -83,7 +82,9 @@ void ClientSocket::generateCGIResponse() {
 void ClientSocket::generateStaticResponse() {
     std::string method = Request.getMethod();
     std::string location = Request.getPath();
-    //std::string host = Request.getHost();
+    std::string host = Request.getHeaders().find("Host")->second;
+    bool autoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
+    std::string path = Request.getArgs().find("path")->second;
     ServerConfig currentConfig;
     Location currentLocation;
     std::string root;
@@ -96,6 +97,7 @@ void ClientSocket::generateStaticResponse() {
     ///go through first config and find location
     std::vector<Location> locations = _config[0].getLocations();
     currentConfig = _config[0];
+
     for (size_t j = 0; j < locations.size(); j++) {
         if (locations[j].getPath() == location) {
             root = locations[j].getRoot();
@@ -104,13 +106,13 @@ void ClientSocket::generateStaticResponse() {
         }
     }
     ///create response for autoindex
-    if(currentLocation.isAutoindex())
+    if(currentLocation.isAutoindex() || autoindex)
     {
         std::cout << "autoindex" << std::endl;
         ///TODO add autoindex
-        std::string html = generate_autoindex(DataStorage::root + "/www" + location);
+        std::string html = generate_autoindex(DataStorage::root + "/www", path + Request.getPath());
 
-		std::cout << DataStorage::root + "/www" + location << std::endl;
+		std::cout << DataStorage::root + "/www" << path << Request.getPath() << std::endl;
 		Response.Body = html;
 		Response.ResponseData = Response.Status + Response.Body;
         return;
