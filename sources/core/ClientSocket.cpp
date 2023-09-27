@@ -1,5 +1,6 @@
 #include "ClientSocket.hpp"
 #include "DataStorage.hpp"
+#include <algorithm>
 
 ClientSocket::kEvent &ClientSocket::getClientInterest() {
     return _clientInterest;
@@ -87,23 +88,17 @@ void ClientSocket::generateStaticResponse() {
     ServerConfig currentConfig;
     Location currentLocation;
     std::string root;
-
+    host = host.substr(0, host.find(':'));
     currentConfig = _config[0];
     std::vector<Location> locations = _config[0].getLocations();
-
     ///get config by host another will be default
-    for(size_t i = 0; i < _config.size(); i++) {
-        if (_config[i].getHost() + _config[i].getPort() == host) {
+    std::string configHost;
+    for (size_t i = 0; i < _config.size(); i++) {
+        if (_config[i].getHost() == host) {
             currentConfig = _config[i];
             locations = _config[i].getLocations();
             break;
         }
-    }
-    ///check method
-    if(!isValidMethod(method, currentLocation)) {
-        std::cout << "invalid method" << std::endl;
-        generateErrorPage(currentConfig, 0);
-        return;
     }
     ///go through first config and find location
     for (size_t j = 0; j < locations.size(); j++) {
@@ -113,20 +108,23 @@ void ClientSocket::generateStaticResponse() {
             break;
         }
     }
+    if (root.empty() && !autoindex) {
+        std::cout << "empty root" << std::endl;
+        generateErrorPage(currentConfig, 404);
+        return;
+    }
+    ///check method
+    if (!isValidMethod(method, currentLocation) && !autoindex) {
+        std::cout << "invalid method" << std::endl;
+        generateErrorPage(currentConfig, 405);
+        return;
+    }
     ///create response for autoindex
     if (currentLocation.isAutoindex() || autoindex) {
-
         std::cout << "autoindex" << std::endl;
-        ///TODO add autoindex
         std::string html = generate_autoindex(DataStorage::root + "/www", path + Request.getPath());
         Response.Body = html;
         Response.ResponseData = Response.Status + Response.Body;
-        return;
-    }
-    if (root.empty()) {
-        ///TODO add error page
-        std::cout << "empty root" << std::endl;
-        generateErrorPage(currentConfig, 404);
         return;
     }
     ///create response for index
@@ -216,13 +214,13 @@ void ClientSocket::getErrorPageData(const std::string &errorRoot) {
 }
 
 bool ClientSocket::isValidMethod(const std::string &method, const Location &location) {
-    if(method == "GET"){
+    if (method == "GET") {
         return location.getMethods()[0];
     }
-    if(method == "POST"){
+    if (method == "POST") {
         return location.getMethods()[1];
     }
-    if(method == "DELETE"){
+    if (method == "DELETE") {
         return location.getMethods()[2];
     }
     return false;
