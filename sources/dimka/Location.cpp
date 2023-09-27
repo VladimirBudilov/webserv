@@ -7,7 +7,7 @@ Location::Location() {
 	_cgi_pass = std::string();
 	_autoindex = false;
 	_file_upload = false;
-	_methods = std::vector<bool>(2, false);
+	_methods = std::vector<bool>(3, false);
 	_max_body_size = 1024;
 }
 

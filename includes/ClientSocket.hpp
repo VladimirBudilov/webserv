@@ -56,7 +56,9 @@ public:
 
     void getErrorPageData(const std::string &errorRoot);
 
-    void generateErrorPage(const ServerConfig &currentConfig);
+    void generateErrorPage(const ServerConfig &currentConfig, int errorNumber);
+
+    bool isValidMethod(const std::string &method, const Location &location);
 };
 
 

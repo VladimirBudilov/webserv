@@ -23,7 +23,7 @@ ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &
     checkSocket(_socket);
 
     fcntl(_socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
-    EV_SET(&_clientInterest, _socket , EVFILT_READ, EV_ADD, 0, 0, NULL);
+    EV_SET(&_clientInterest, _socket, EVFILT_READ, EV_ADD, 0, 0, NULL);
     kevent(kq, &_clientInterest, 1, NULL, 0, NULL);
 }
 
@@ -32,17 +32,16 @@ void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest)
 }
 
 bool ClientSocket::isValidRequest() {
-    if(Request.RequestData.empty())
+    if (Request.RequestData.empty())
         return false;
-    Request. parse_request(Request.RequestData);
-    if(Request.isVersion())
+    Request.parse_request(Request.RequestData);
+    if (Request.isVersion())
         return true;
     ///TODO add correct Request validation
     return false;
 }
 
 void ClientSocket::generateCGIResponse() {
-
 
 
     const char *pythonScriptPath = "/Users/vbudilov/Desktop/WebServ/webserv/www/bin-cgi/data.py";
@@ -89,15 +88,24 @@ void ClientSocket::generateStaticResponse() {
     Location currentLocation;
     std::string root;
 
-    ///TODO find way to choose correct config?
-
-
-    ///TODO check method
-
-    ///go through first config and find location
-    std::vector<Location> locations = _config[0].getLocations();
     currentConfig = _config[0];
+    std::vector<Location> locations = _config[0].getLocations();
 
+    ///get config by host another will be default
+    for(size_t i = 0; i < _config.size(); i++) {
+        if (_config[i].getHost() + _config[i].getPort() == host) {
+            currentConfig = _config[i];
+            locations = _config[i].getLocations();
+            break;
+        }
+    }
+    ///check method
+    if(!isValidMethod(method, currentLocation)) {
+        std::cout << "invalid method" << std::endl;
+        generateErrorPage(currentConfig, 0);
+        return;
+    }
+    ///go through first config and find location
     for (size_t j = 0; j < locations.size(); j++) {
         if (locations[j].getPath() == location) {
             root = locations[j].getRoot();
@@ -106,26 +114,23 @@ void ClientSocket::generateStaticResponse() {
         }
     }
     ///create response for autoindex
-    if(currentLocation.isAutoindex() || autoindex)
-    {
+    if (currentLocation.isAutoindex() || autoindex) {
+
         std::cout << "autoindex" << std::endl;
         ///TODO add autoindex
         std::string html = generate_autoindex(DataStorage::root + "/www", path + Request.getPath());
-
-		std::cout << DataStorage::root + "/www" << path << Request.getPath() << std::endl;
-		Response.Body = html;
-		Response.ResponseData = Response.Status + Response.Body;
+        Response.Body = html;
+        Response.ResponseData = Response.Status + Response.Body;
         return;
     }
-    if(root.empty())
-    {
+    if (root.empty()) {
         ///TODO add error page
-        std::cout << "error page" << std::endl;
-        generateErrorPage(currentConfig);
+        std::cout << "empty root" << std::endl;
+        generateErrorPage(currentConfig, 404);
         return;
     }
     ///create response for index
-    if(root[root.size() - 1] == '/')
+    if (root[root.size() - 1] == '/')
         root += currentLocation.getIndex();
     getFoolPath(root);
     getDataByFullPath(root, currentConfig);
@@ -141,7 +146,7 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
         }
         file.close();
     } else {
-        generateErrorPage(currentConfig);
+        generateErrorPage(currentConfig, 0);
         return;
     }
     Response.Body = response;
@@ -149,10 +154,10 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
     Response.sentLength = 0;
 }
 
-void ClientSocket::generateErrorPage(const ServerConfig &currentConfig) {
-    std::__1::map<short, std::string> errors =  currentConfig.getErrorPages();
-    std::__1::map<short, std::string>::iterator it = errors.find(404);
-    Response.generateDefoultErrorPage(404);
+void ClientSocket::generateErrorPage(const ServerConfig &currentConfig, int errorNumber) {
+    std::__1::map<short, std::string> errors = currentConfig.getErrorPages();
+    std::__1::map<short, std::string>::iterator it = errors.find(errorNumber);
+    Response.generateDefoultErrorPage(errorNumber);
     std::string errorRoot = it->second;
     getFoolPath(errorRoot);
     getErrorPageData(errorRoot);
@@ -163,7 +168,7 @@ void ClientSocket::getFoolPath(std::string &pathToUpdate) const {
     pathToUpdate.replace(found, sizeof("/FULL_PATH_TO_FILE") - 1, DataStorage::root);
 }
 
-ClientSocket::ClientSocket(const ClientSocket &socket)  : ServerSocket(socket) {
+ClientSocket::ClientSocket(const ClientSocket &socket) : ServerSocket(socket) {
     _socket = socket._socket;
     _clientInterest = socket._clientInterest;
     _config = socket._config;
@@ -208,5 +213,18 @@ void ClientSocket::getErrorPageData(const std::string &errorRoot) {
     Response.Body = response;
     Response.ResponseData = Response.Status + Response.Body;
     Response.sentLength = 0;
+}
+
+bool ClientSocket::isValidMethod(const std::string &method, const Location &location) {
+    if(method == "GET"){
+        return location.getMethods()[0];
+    }
+    if(method == "POST"){
+        return location.getMethods()[1];
+    }
+    if(method == "DELETE"){
+        return location.getMethods()[2];
+    }
+    return false;
 }
 
