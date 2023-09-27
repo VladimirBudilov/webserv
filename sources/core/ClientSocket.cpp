@@ -103,6 +103,9 @@ void ClientSocket::generateStaticResponse() {
     {
         std::cout << "autoindex" << std::endl;
         ///TODO add autoindex
+        std::string html = generate_autoindex(root);
+		Response.Body = html;
+		Response.ResponseData = Response.Status + Response.Body;
         return;
     }
     if(root.empty())
