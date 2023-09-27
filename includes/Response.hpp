@@ -11,7 +11,10 @@ public:
     std::string Status;
     std::string Body;
 
+    void generateDefoultErrorPage(int code);
     Response();
+
+    void getdefoultErrorPage(int code);
 };
 
 

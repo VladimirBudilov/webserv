@@ -1,4 +1,5 @@
 #include "ClientSocket.hpp"
+#include "DataStorage.hpp"
 
 ClientSocket::kEvent &ClientSocket::getClientInterest() {
     return _clientInterest;
@@ -42,8 +43,11 @@ bool ClientSocket::isValidRequest() {
 }
 
 void ClientSocket::generateCGIResponse() {
+
+
+
     const char *pythonScriptPath = "/Users/vbudilov/Desktop/WebServ/webserv/www/bin-cgi/data.py";
-    const char *pythonInterpreter = "/usr/bin/python2.7"; // Путь к интерпретатору Python
+    const char *pythonInterpreter = "/usr/local/bin/python3"; // Путь к интерпретатору Python
 
     // Аргументы для Python скрипта
     char *const pythonArgs[] = {const_cast<char *>(pythonInterpreter),
@@ -79,12 +83,13 @@ void ClientSocket::generateCGIResponse() {
 void ClientSocket::generateStaticResponse() {
     std::string method = Request.getMethod();
     std::string location = Request.getPath();
+    //std::string host = Request.getHost();
     ServerConfig currentConfig;
     Location currentLocation;
-
     std::string root;
 
     ///TODO find way to choose correct config?
+
 
     ///TODO check method
 
@@ -116,7 +121,8 @@ void ClientSocket::generateStaticResponse() {
         return;
     }
     ///create response for index
-    root += currentLocation.getIndex();
+    if(root[root.size() - 1] == '/')
+        root += currentLocation.getIndex();
     getFoolPath(root);
     getDataByFullPath(root, currentConfig);
 }
@@ -142,20 +148,15 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
 void ClientSocket::generateErrorPage(const ServerConfig &currentConfig) {
     std::__1::map<short, std::string> errors =  currentConfig.getErrorPages();
     std::__1::map<short, std::string>::iterator it = errors.find(404);
-    Response.Status = "HTTP/1.1 404 Not Found\r\n\n";
+    Response.generateDefoultErrorPage(404);
     std::string errorRoot = it->second;
     getFoolPath(errorRoot);
     getErrorPageData(errorRoot);
 }
 
 void ClientSocket::getFoolPath(std::string &pathToUpdate) const {
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        perror("getcwd() error");
-        exit(1);
-    }
     size_t found = pathToUpdate.find("/FULL_PATH_TO_FILE");
-    pathToUpdate.replace(found, sizeof("/FULL_PATH_TO_FILE") - 1, cwd);
+    pathToUpdate.replace(found, sizeof("/FULL_PATH_TO_FILE") - 1, DataStorage::root);
 }
 
 ClientSocket::ClientSocket(const ClientSocket &socket)  : ServerSocket(socket) {
@@ -197,7 +198,6 @@ void ClientSocket::getErrorPageData(const std::string &errorRoot) {
     } else {
         //generate error page
         std::cout << "error page" << std::endl;
-        Response.Body = "Error page not found";
         Response.ResponseData = Response.Status + Response.Body;
         return;
     }
