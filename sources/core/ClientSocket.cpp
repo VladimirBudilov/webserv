@@ -43,6 +43,40 @@ bool ClientSocket::isValidRequest() {
 }
 
 void ClientSocket::generateCGIResponse() {
+    std::string method = Request.getMethod();
+    std::string location = Request.getPath();
+    std::string host = Request.getHeaders().find("Host")->second;
+    bool autoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
+    std::string path = Request.getArgs().find("path")->second;
+    ServerConfig currentConfig;
+    Location currentLocation;
+    std::string root;
+    host = host.substr(0, host.find(':'));
+    currentConfig = _config[0];
+    std::vector<Location> locations = _config[0].getLocations();
+    ///get config by host another will be default
+    std::string configHost;
+    for (size_t i = 0; i < _config.size(); i++) {
+        if (_config[i].getHost() == host) {
+            currentConfig = _config[i];
+            locations = _config[i].getLocations();
+            break;
+        }
+    }
+    ///go through first config and find location
+    for (size_t i = 0; i < locations.size(); i++) {
+        if (locations[i].getPath() == location) {
+            root = locations[i].getRoot();
+            currentLocation = locations[i];
+            break;
+        }
+    }
+    if (root.empty() && !autoindex) {
+        std::cout << "empty root" << std::endl;
+        generateErrorPage(currentConfig, 404);
+        return;
+    }
+
 
 
     const char *pythonScriptPath = "/Users/vbudilov/Desktop/WebServ/webserv/www/bin-cgi/data.py";
