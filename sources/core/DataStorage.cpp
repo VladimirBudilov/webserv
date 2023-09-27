@@ -1,18 +1,29 @@
 #include "DataStorage.hpp"
 
+std::map<int, std::string> DataStorage::defaultErrorPages;
+std::map<std::string, std::string> DataStorage::mimeTypes;
+
 std::string DataStorage::root = DataStorage::getCurrentWorkingDirectory();
 
-void DataStorage::initDefaultErrorPages() {
-    defaultErrorPages[400] = root + "/errors/standardErrors/400.html";
-    defaultErrorPages[401] = root + "/errors/standardErrors/401.html";
-    defaultErrorPages[403] = root + "/errors/standardErrors/403.html";
-    defaultErrorPages[404] = root + "/errors/standardErrors/404.html";
-    defaultErrorPages[405] = root + "/errors/standardErrors/405.html";
-    defaultErrorPages[406] = root + "/errors/standardErrors/406.html";
-    defaultErrorPages[408] = root + "/errors/standardErrors/408.html";
-    defaultErrorPages[413] = root + "/errors/standardErrors/413.html";
-    defaultErrorPages[414] = root + "/errors/standardErrors/414.html";
-    defaultErrorPages[500] = root + "/errors/standardErrors/500.html";
-    defaultErrorPages[501] = root + "/errors/standardErrors/501.html";
-    defaultErrorPages[505] = root + "/errors/standardErrors/505.html";
+std::string DataStorage::getCurrentWorkingDirectory() {
+    char buff[FILENAME_MAX];
+    getcwd(buff, FILENAME_MAX);
+    std::string current_working_dir(buff);
+    initDefaultErrorPages();
+    return current_working_dir;
 }
+
+void DataStorage::initDefaultErrorPages() {
+    defaultErrorPages[400] = root + "/www/errors/standardErrors/HTTP400.html";
+    defaultErrorPages[401] = root + "/www/errors/standardErrors/HTTP401.html";
+    defaultErrorPages[403] = root + "/www/errors/standardErrors/HTTP403.html";
+    defaultErrorPages[404] = root + "/www/errors/standardErrors/HTTP404.html";
+    defaultErrorPages[405] = root + "/www/errors/standardErrors/HTTP405.html";
+    defaultErrorPages[413] = root + "/www/errors/standardErrors/HTTP413.html";
+    defaultErrorPages[500] = root + "/www/errors/standardErrors/HTTP500.html";
+    defaultErrorPages[501] = root + "/www/errors/standardErrors/HTTP501.html";
+    defaultErrorPages[505] = root + "/www/errors/standardErrors/HTTP505.html";
+}
+
+
+

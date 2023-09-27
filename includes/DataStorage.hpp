@@ -10,14 +10,7 @@ public:
     static std::map<int, std::string> defaultErrorPages;
     static std::map<std::string, std::string> mimeTypes;
 private:
-    static std::string getCurrentWorkingDirectory() {
-        char cwd[PATH_MAX];
-        if (getcwd(cwd, sizeof(cwd)) == NULL) {
-            perror("getcwd() error");
-            exit(1);
-        }
-        return std::string(cwd);
-    }
+    static std::string getCurrentWorkingDirectory();
     static void initDefaultErrorPages();
 };
 

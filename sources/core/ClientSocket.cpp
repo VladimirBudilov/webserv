@@ -83,12 +83,13 @@ void ClientSocket::generateCGIResponse() {
 void ClientSocket::generateStaticResponse() {
     std::string method = Request.getMethod();
     std::string location = Request.getPath();
+    //std::string host = Request.getHost();
     ServerConfig currentConfig;
     Location currentLocation;
-
     std::string root;
 
     ///TODO find way to choose correct config?
+
 
     ///TODO check method
 
@@ -144,7 +145,7 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
 void ClientSocket::generateErrorPage(const ServerConfig &currentConfig) {
     std::__1::map<short, std::string> errors =  currentConfig.getErrorPages();
     std::__1::map<short, std::string>::iterator it = errors.find(404);
-    Response.generateErrorStatus(404);
+    Response.generateDefoultErrorPage(404);
     std::string errorRoot = it->second;
     getFoolPath(errorRoot);
     getErrorPageData(errorRoot);
@@ -194,7 +195,6 @@ void ClientSocket::getErrorPageData(const std::string &errorRoot) {
     } else {
         //generate error page
         std::cout << "error page" << std::endl;
-        Response.Body = "Error page not found";
         Response.ResponseData = Response.Status + Response.Body;
         return;
     }
