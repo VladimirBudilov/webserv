@@ -22,7 +22,6 @@ ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &
     socklen_t clientAddrLen = sizeof(clientAddr);
     setSocket(accept(socket, (struct sockaddr *) &clientAddr, &clientAddrLen));
     checkSocket(_socket);
-
     fcntl(_socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
     EV_SET(&_clientInterest, _socket, EVFILT_READ, EV_ADD, 0, 0, NULL);
     kevent(kq, &_clientInterest, 1, NULL, 0, NULL);
@@ -76,7 +75,6 @@ void ClientSocket::generateCGIResponse() {
         generateErrorPage(currentConfig, 404);
         return;
     }
-
 
 
     const char *pythonScriptPath = "/Users/vbudilov/Desktop/WebServ/webserv/www/bin-cgi/data.py";
@@ -164,6 +162,12 @@ void ClientSocket::generateStaticResponse() {
     ///create response for index
     if (root[root.size() - 1] == '/')
         root += currentLocation.getIndex();
+    ///check if path with CGI extension
+    if (isCGI(root)) {
+        std::cout << "CGI" << std::endl;
+        generateCGIResponse(root);
+        return;
+    }
     getFoolPath(root);
     getDataByFullPath(root, currentConfig);
 }
@@ -305,6 +309,13 @@ bool ClientSocket::isValidMethod(const std::string &method, const Location &loca
     if (method == "DELETE") {
         return location.getMethods()[2];
     }
+    return false;
+}
+
+bool ClientSocket::isCGI(std::string path) {
+    ///check that last 2 symbols is .py
+    if (path.size() > 2 && path.substr(path.size() - 3, 3) == ".py")
+        return true;
     return false;
 }
 

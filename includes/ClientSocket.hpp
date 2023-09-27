@@ -61,6 +61,8 @@ public:
     void generateErrorPage(const ServerConfig &currentConfig, int errorNumber);
 
     bool isValidMethod(const std::string &method, const Location &location);
+
+    bool isCGI(std::string path);
 };
 
 
