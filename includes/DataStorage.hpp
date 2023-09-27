@@ -12,6 +12,7 @@ public:
 private:
     static std::string getCurrentWorkingDirectory();
     static void initDefaultErrorPages();
+	static std::map<std::string, std::string> initMimeTypes();
 };
 
 
