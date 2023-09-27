@@ -6,6 +6,36 @@ void configError() {
     exit(1);
 }
 
+std::string generate_autoindex(const std::string& path) {
+	DIR* dir;
+	struct dirent* ent;
+	struct stat filestat;
+	std::stringstream html;
+
+	html << "<html><body><ul>";
+
+	if ((dir = opendir(path.c_str())) != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			std::string filepath = path + "/" + ent->d_name;
+			stat(filepath.c_str(), &filestat);
+
+			std::string mod_time = ctime(&filestat.st_mtime);
+			mod_time = mod_time.substr(0, mod_time.size()-1);  // remove trailing newline
+
+			html << "<li><a href=\"" << ent->d_name << "\">" << ent->d_name << "</a> "
+				 << " (size: " << filestat.st_size << ", "
+				 << "modified: " << mod_time << ")</li>";
+		}
+		closedir(dir);
+	} else {
+		html << "<li>Error opening directory</li>";
+	}
+
+	html << "</ul></body></html>";
+
+	return html.str();
+}
+
 void parseServer(std::vector<std::string> &str, std::vector<ServerConfig>& servers, int& i) {
     i++;
     ServerConfig res;
