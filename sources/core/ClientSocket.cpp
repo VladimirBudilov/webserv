@@ -108,7 +108,9 @@ void ClientSocket::generateStaticResponse() {
     {
         std::cout << "autoindex" << std::endl;
         ///TODO add autoindex
-        std::string html = generate_autoindex(root);
+        std::string html = generate_autoindex(DataStorage::root + "/www" + location);
+
+		std::cout << DataStorage::root + "/www" + location << std::endl;
 		Response.Body = html;
 		Response.ResponseData = Response.Status + Response.Body;
         return;
