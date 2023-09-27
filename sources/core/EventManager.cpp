@@ -25,7 +25,6 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
                     case EVFILT_READ: {
                         readRequest(clientSocket, event);
                         createResponse(clientSocket);
-                        std::cout << "Request: " << clientSocket.Request.RequestData << std::endl;
                         break;
                     }
                         ///if client socket event on writing

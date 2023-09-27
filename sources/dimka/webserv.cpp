@@ -6,11 +6,12 @@ void configError() {
     exit(1);
 }
 
-std::string generate_autoindex(const std::string& path) {
+std::string generate_autoindex(const std::string &rootPath, const std::string &location) {
 	DIR* dir;
 	struct dirent* ent;
 	struct stat filestat;
 	std::stringstream html;
+    std::string path = rootPath + location;
 
 	html << "<html><body><ul>";
 
@@ -20,11 +21,18 @@ std::string generate_autoindex(const std::string& path) {
 			stat(filepath.c_str(), &filestat);
 
 			std::string mod_time = ctime(&filestat.st_mtime);
-			mod_time = mod_time.substr(0, mod_time.size()-1);  // remove trailing newline
-
-			html << "<li><a href=\"" << ent->d_name << "\">" << ent->d_name << "</a> "
-				 << " (size: " << filestat.st_size << ", "
-				 << "modified: " << mod_time << ")</li>";
+			mod_time = mod_time.substr(0, mod_time.size()-1);  // remove trailing newlinelocation + "/"
+            if(location == "/") {
+                html << "<li><a href=\"" << ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+                     << " (size: " << filestat.st_size << ", "
+                     << "modified: " << mod_time << ")</li>";
+            }
+            else
+            {
+                html << "<li><a href=\"" << location + "/" + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+                     << " (size: " << filestat.st_size << ", "
+                     << "modified: " << mod_time << ")</li>";
+            }
 		}
 		closedir(dir);
 	} else {
