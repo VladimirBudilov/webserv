@@ -24,6 +24,8 @@ public:
     Response Response;
     ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs);
 
+	std::string generate_autoindex(const std::string &rootPath, const std::string &location);
+
     void setClientInterest(const kEvent &clientInterest);
     kEvent &getClientInterest();
 

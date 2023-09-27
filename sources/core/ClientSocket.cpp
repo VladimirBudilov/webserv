@@ -168,6 +168,54 @@ void ClientSocket::generateStaticResponse() {
     getDataByFullPath(root, currentConfig);
 }
 
+std::string ClientSocket::generate_autoindex(const std::string &rootPath, const std::string &location) {
+	DIR* dir;
+	struct dirent* ent;
+	struct stat filestat;
+	std::stringstream html;
+	std::string path = rootPath + location;
+
+	html << "<html><body><ul>";
+
+	if ((dir = opendir(path.c_str())) != NULL) {
+		while ((ent = readdir(dir)) != NULL) {
+			std::string filepath = path + "/" + ent->d_name;
+			stat(filepath.c_str(), &filestat);
+
+			std::string mod_time = ctime(&filestat.st_mtime);
+			mod_time = mod_time.substr(0, mod_time.size()-1);  // remove trailing newlinelocation + "/"
+			if(location[location.size() - 1] == '/')
+			{
+				html << "<li><a href=\"" << location + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+					 << " (size: " << filestat.st_size << ", "
+					 << "modified: " << mod_time << ")</li>";
+			} else
+			{
+				html << "<li><a href=\"" << location + "/" + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+					 << " (size: " << filestat.st_size << ", "
+					 << "modified: " << mod_time << ")</li>";
+			}
+		}
+		closedir(dir);
+	} else {
+		std::fstream file(path.c_str());
+		if(!file.is_open())
+			html << "Error: cannot open file" << std::endl;
+		else
+		{
+			file >> html.rdbuf();
+			//std::cout << file << std::endl;
+			file.close();
+			Response.Status =  "HTTP/1.1 200 OK\n"
+			"Content-Type: image/jpeg\n\n";
+		}
+	}
+
+	html << "</ul></body></html>";
+
+	return html.str();
+}
+
 void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig &currentConfig) {
     std::ifstream file(path.c_str());
     std::string str;
