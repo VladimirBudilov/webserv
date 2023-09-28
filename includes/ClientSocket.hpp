@@ -42,9 +42,9 @@ public:
 
     bool isValidRequest();
 
-    void generateCGIResponse();
+    void generateCGIResponse(const std::string &path, const Location &location);
 
-    void generateStaticResponse();
+    void generateResponse();
 
     ClientSocket(const ClientSocket &socket);
     ClientSocket &operator=(const ClientSocket &socket);
@@ -54,11 +54,11 @@ public:
 
     void getFoolPath(std::string &pathToUpdate) const;
 
-    void getDataByFullPath(const std::string &path, const ServerConfig &currentConfig);
+    void getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location);
 
     void getErrorPageData(const std::string &errorRoot);
 
-    void generateErrorPage(const ServerConfig &currentConfig, int errorNumber);
+    void generateErrorPage(const ServerConfig &config, int errorNumber);
 
     bool isValidMethod(const std::string &method, const Location &location);
 

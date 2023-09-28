@@ -71,10 +71,7 @@ void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::k
 void EventManager::createResponse(ClientSocket &clientSocket) const {
     if (!clientSocket.isValidRequest())
         return;
-    if (clientSocket.Request.hasCGI())
-        clientSocket.generateCGIResponse();
-    else
-        clientSocket.generateStaticResponse();
+    clientSocket.generateResponse();
     if (clientSocket.Response.ResponseData.size() > 0)
         addClientSocketEvent(clientSocket);
     RemoveCLientSocketEvent(clientSocket);

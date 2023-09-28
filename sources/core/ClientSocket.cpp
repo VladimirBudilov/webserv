@@ -41,77 +41,69 @@ bool ClientSocket::isValidRequest() {
     return false;
 }
 
-void ClientSocket::generateCGIResponse() {
-    std::string method = Request.getMethod();
-    std::string location = Request.getPath();
-    std::string host = Request.getHeaders().find("Host")->second;
-    bool autoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
-    std::string path = Request.getArgs().find("path")->second;
-    ServerConfig currentConfig;
-    Location currentLocation;
-    std::string root;
-    host = host.substr(0, host.find(':'));
-    currentConfig = _config[0];
-    std::vector<Location> locations = _config[0].getLocations();
-    ///get config by host another will be default
-    std::string configHost;
-    for (size_t i = 0; i < _config.size(); i++) {
-        if (_config[i].getHost() == host) {
-            currentConfig = _config[i];
-            locations = _config[i].getLocations();
-            break;
-        }
-    }
-    ///go through first config and find location
-    for (size_t i = 0; i < locations.size(); i++) {
-        if (locations[i].getPath() == location) {
-            root = locations[i].getRoot();
-            currentLocation = locations[i];
-            break;
-        }
-    }
-    if (root.empty() && !autoindex) {
-        std::cout << "empty root" << std::endl;
-        generateErrorPage(currentConfig, 404);
-        return;
-    }
+/*
+ * path info - path after .py(where to put new file)
+ * path translated - full path to path info
+ *
+ * */
 
 
-    const char *pythonScriptPath = "/Users/vbudilov/Desktop/WebServ/webserv/www/bin-cgi/data.py";
-    const char *pythonInterpreter = "/usr/local/bin/python3"; // Путь к интерпретатору Python
+void ClientSocket::generateCGIResponse(const std::string &path, const Location &location) {
 
-    // Аргументы для Python скрипта
-    char *const pythonArgs[] = {const_cast<char *>(pythonInterpreter),
-                                const_cast<char *>(pythonScriptPath), nullptr};
+    const char *pythonScriptPath = path.c_str();
+    const char *pythonInterpreter = location.getCgiPass().c_str() ;
+    std::string pathInfo;
+    std::string pathTranslated;
+    char **pythonEnv = new char *[3 + Request.getArgs().size()];
+    std::map<std::string, std::string > env = Request.getArgs();
 
-    // Переменные окружения (в данном случае не указываем)
-    char *const pythonEnv[] = {nullptr};
-    int fd = open("/Users/vbudilov/Desktop/WebServ/webserv/www/bin-cgi/data.txt", O_RDWR | O_CREAT, 0666);
-    int pid = fork();
-    if (!pid) // Создаем дочерний процесс
+
+    pathInfo = path.substr(path.find(".py") + 3, path.size() - 1);
+    pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www" + pathInfo;
+    pathInfo = "PATH_INFO=" + pathInfo;
+    pythonEnv[0] = strdup(pathInfo.c_str());
+    pythonEnv[1] = strdup(pathTranslated.c_str());
+    pythonEnv[2] = NULL;
+    ///put all args in env
+    int i = 2;
+    for (std::map<std::string, std::string>::iterator it = env.begin(); it != env.end(); it++)
     {
-        // Запускаем скрипт с помощью execve
+        std::string tmp = it->first + "=" + it->second;
+        pythonEnv[i] = strdup(tmp.c_str());
+        i++;
+    }
+    pythonEnv[i] = NULL;
+    ///generate args for execve
+    char **pythonArgs = new char *[3];
+    pythonArgs[0] = strdup(pythonInterpreter);
+    pythonArgs[1] = strdup(pythonScriptPath);
+    pythonArgs[2] = NULL;
+    std::string tmpFile = "CGI" + std::to_string(_socket);
+    int fd = open(tmpFile.c_str(), O_RDWR | O_CREAT, 0666);
+    int pid = fork();
+    if (!pid)
+    {
         dup2(fd, 1);
         if (execve(pythonInterpreter, pythonArgs, pythonEnv) == -1) {
             perror("Ошибка при выполнении execve");
             exit(1);
         }
         close(fd);
+
     }
-    waitpid(pid, NULL, 0); // Ждем завершения дочернего процесса
-    std::string response;
-    std::ifstream file("/Users/vbudilov/Desktop/WebServ/webserv/www/bin-cgi/data.txt");
-    std::string str;
-    while (std::getline(file, str)) {
-        response += str + "\n";
-    }
+    waitpid(pid, NULL, 0);
+    std::ifstream file(tmpFile.c_str());
+    std::getline(file, Response.Body, '\0');
     file.close();
-    Response.Body = response;
+    remove(tmpFile.c_str());
+    delete[] pythonArgs;
+    delete[] pythonEnv;
+
     Response.ResponseData = Response.Status + Response.Body;
     Response.sentLength = 0;
 }
 
-void ClientSocket::generateStaticResponse() {
+void ClientSocket::generateResponse() {
     std::string method = Request.getMethod();
     std::string location = Request.getPath();
     std::string host = Request.getHeaders().find("Host")->second;
@@ -162,84 +154,85 @@ void ClientSocket::generateStaticResponse() {
     ///create response for index
     if (root[root.size() - 1] == '/')
         root += currentLocation.getIndex();
-    ///check if path with CGI extension
-    if (isCGI(root)) {
-        std::cout << "CGI" << std::endl;
-        generateCGIResponse(root);
-        return;
-    }
     getFoolPath(root);
-    getDataByFullPath(root, currentConfig);
+    getDataByFullPath(root, currentConfig, currentLocation);
 }
 
 std::string ClientSocket::generate_autoindex(const std::string &rootPath, const std::string &location) {
-	DIR* dir;
-	struct dirent* ent;
-	struct stat filestat;
-	std::stringstream html;
-	std::string path = rootPath + location;
+    DIR *dir;
+    struct dirent *ent;
+    struct stat filestat;
+    std::stringstream html;
+    std::string path = rootPath + location;
 
-	html << "<html><body><ul>";
+    html << "<html><body><ul>";
 
-	if ((dir = opendir(path.c_str())) != NULL) {
-		while ((ent = readdir(dir)) != NULL) {
-			std::string filepath = path + "/" + ent->d_name;
-			stat(filepath.c_str(), &filestat);
+    if ((dir = opendir(path.c_str())) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            std::string filepath = path + "/" + ent->d_name;
+            stat(filepath.c_str(), &filestat);
 
-			std::string mod_time = ctime(&filestat.st_mtime);
-			mod_time = mod_time.substr(0, mod_time.size()-1);  // remove trailing newlinelocation + "/"
-			if(location[location.size() - 1] == '/')
-			{
-				html << "<li><a href=\"" << location + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
-					 << " (size: " << filestat.st_size << ", "
-					 << "modified: " << mod_time << ")</li>";
-			} else
-			{
-				html << "<li><a href=\"" << location + "/" + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
-					 << " (size: " << filestat.st_size << ", "
-					 << "modified: " << mod_time << ")</li>";
-			}
-		}
-		closedir(dir);
-	} else {
-		std::fstream file(path.c_str());
-		if(!file.is_open())
-			html << "Error: cannot open file" << std::endl;
-		else
-		{
-			file >> html.rdbuf();
-			//std::cout << file << std::endl;
-			file.close();
-			Response.Status =  "HTTP/1.1 200 OK\n"
-			"Content-Type: image/jpeg\n\n";
-		}
-	}
+            std::string mod_time = ctime(&filestat.st_mtime);
+            mod_time = mod_time.substr(0, mod_time.size() - 1);  // remove trailing newlinelocation + "/"
+            if (location[location.size() - 1] == '/') {
+                html << "<li><a href=\"" << location + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+                     << " (size: " << filestat.st_size << ", "
+                     << "modified: " << mod_time << ")</li>";
+            } else {
+                html << "<li><a href=\"" << location + "/" + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+                     << " (size: " << filestat.st_size << ", "
+                     << "modified: " << mod_time << ")</li>";
+            }
+        }
+        closedir(dir);
+    } else {
+        std::fstream file(path.c_str());
+        if (!file.is_open())
+            html << "Error: cannot open file" << std::endl;
+        else {
+            file >> html.rdbuf();
+            //std::cout << file << std::endl;
+            file.close();
+            Response.Status = "HTTP/1.1 200 OK\n"
+                              "Content-Type: image/jpeg\n\n";
+        }
+    }
 
-	html << "</ul></body></html>";
+    html << "</ul></body></html>";
 
-	return html.str();
+    return html.str();
 }
 
-void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig &currentConfig) {
+void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location) {
     std::ifstream file(path.c_str());
     std::string str;
     std::string response;
-    if (file.is_open()) {
+    ///handle cgi(.py scripts)
+    if (isCGI(path)) {
+        std::cout << "CGI" << std::endl;
+        generateCGIResponse(path, location);
+        return;
+    }
+    ///handle static file
+    else if (file.is_open()) {
         while (std::getline(file, str)) {
             response += str + "\n";
         }
         file.close();
-    } else {
-        generateErrorPage(currentConfig, 0);
+        Response.Body = response;
+        Response.ResponseData = Response.Status + Response.Body;
+        Response.sentLength = 0;
+    }
+    ///handle error page
+    else {
+        generateErrorPage(config, 404);
         return;
     }
-    Response.Body = response;
-    Response.ResponseData = Response.Status + Response.Body;
-    Response.sentLength = 0;
+
 }
 
-void ClientSocket::generateErrorPage(const ServerConfig &currentConfig, int errorNumber) {
-    std::__1::map<short, std::string> errors = currentConfig.getErrorPages();
+void ClientSocket::generateErrorPage(const ServerConfig &config, int errorNumber) {
+    std::__1::map<short, std::string> errors = config.getErrorPages();
     std::__1::map<short, std::string>::iterator it = errors.find(errorNumber);
     Response.generateDefoultErrorPage(errorNumber);
     std::string errorRoot = it->second;
