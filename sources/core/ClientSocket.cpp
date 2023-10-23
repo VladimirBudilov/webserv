@@ -41,22 +41,21 @@ bool ClientSocket::isValidRequest() {
     return false;
 }
 
-/*
- * path info - path after .py(where to put new file)
- * path translated - full path to path info
- *
- * */
-
-
 void ClientSocket::generateCGIResponse(const std::string &path, const Location &location) {
-
     const char *pythonScriptPath = path.c_str();
-    const char *pythonInterpreter = location.getCgiPass().c_str() ;
+    const char *pythonInterpreter = location.getCgiPass().c_str();
     std::string pathInfo;
     std::string pathTranslated;
-    char **pythonEnv = new char *[3 + Request.getArgs().size()];
-    std::map<std::string, std::string > env = Request.getArgs();
-
+    std::string tmpBodyFile;
+    int hasBody = Request.getMethod() == "POST" ? 1 : 0;
+    char **pythonEnv = new char *[3 + Request.getArgs().size() + hasBody];
+    std::map<std::string, std::string> env = Request.getArgs();
+    if (!Request.getBody().empty()) {
+        tmpBodyFile = "BODY" + std::to_string(_socket);
+        std::ofstream file(tmpBodyFile.c_str());
+        file << Request.getBody();
+        file.close();
+    }
 
     pathInfo = path.substr(path.find(".py") + 3, path.size() - 1);
     pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www" + pathInfo;
@@ -66,11 +65,14 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
     pythonEnv[2] = NULL;
     ///put all args in env
     int i = 2;
-    for (std::map<std::string, std::string>::iterator it = env.begin(); it != env.end(); it++)
-    {
+    for (std::map<std::string, std::string>::iterator it = env.begin(); it != env.end(); it++) {
         std::string tmp = it->first + "=" + it->second;
         pythonEnv[i] = strdup(tmp.c_str());
         i++;
+    }
+    if(hasBody)
+    {
+        pythonEnv[i++] = strdup(("BODY_FILE=" + tmpBodyFile).c_str());
     }
     pythonEnv[i] = NULL;
     ///generate args for execve
@@ -78,24 +80,27 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
     pythonArgs[0] = strdup(pythonInterpreter);
     pythonArgs[1] = strdup(pythonScriptPath);
     pythonArgs[2] = NULL;
-    std::string tmpFile = "CGI" + std::to_string(_socket);
-    int fd = open(tmpFile.c_str(), O_RDWR | O_CREAT, 0666);
+    std::string tmpCGIFile = "CGI" + std::to_string(_socket);
+    int fdCGIFile = open(tmpCGIFile.c_str(), O_RDWR | O_CREAT, 0666);
+    if (fdCGIFile == -1) {
+        perror("Ошибка при открытии файла");
+        exit(1);
+    }
     int pid = fork();
-    if (!pid)
-    {
-        dup2(fd, 1);
+    if (!pid) {
+        dup2(fdCGIFile, 1);
         if (execve(pythonInterpreter, pythonArgs, pythonEnv) == -1) {
             perror("Ошибка при выполнении execve");
             exit(1);
         }
-        close(fd);
+        close(fdCGIFile);
 
     }
     waitpid(pid, NULL, 0);
-    std::ifstream file(tmpFile.c_str());
+    std::ifstream file(tmpCGIFile.c_str());
     std::getline(file, Response.Body, '\0');
     file.close();
-    remove(tmpFile.c_str());
+    remove(tmpCGIFile.c_str());
     delete[] pythonArgs;
     delete[] pythonEnv;
 
@@ -108,7 +113,7 @@ void ClientSocket::generateResponse() {
     std::string location = Request.getPath();
     std::string host = Request.getHeaders().find("Host")->second;
     bool autoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
-    std::string path = Request.getArgs().find("path")->second;
+    std::string path = Request.getPath();
     ServerConfig currentConfig;
     Location currentLocation;
     std::string root;
@@ -213,7 +218,7 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
         generateCGIResponse(path, location);
         return;
     }
-    ///handle static file
+        ///handle static file
     else if (file.is_open()) {
         while (std::getline(file, str)) {
             response += str + "\n";
@@ -223,7 +228,7 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
         Response.ResponseData = Response.Status + Response.Body;
         Response.sentLength = 0;
     }
-    ///handle error page
+        ///handle error page
     else {
         generateErrorPage(config, 404);
         return;

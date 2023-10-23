@@ -1,17 +1,16 @@
 import os
 
-# Get the values of environment variables as integers
 # Define the calculate function first
 def calculate(v1, v2, op):
     result = None
 
-    if op == "+":
+    if op == "%2B":
         result = v1 + v2
     elif op == "-":
         result = v1 - v2
     elif op == "*":
         result = v1 * v2
-    elif op == "/":
+    elif op == "%2F":
         if v2 != 0:
             result = v1 / v2
         else:
@@ -22,12 +21,15 @@ def calculate(v1, v2, op):
     return result
 
 # Get the values of environment variables as integers
-v1 = int(os.environ.get("v1", 0))
-v2 = int(os.environ.get("v2", 0))
+v1 = int(os.environ.get("v1", 1))
+v2 = int(os.environ.get("v2", 1))
 operator = os.environ.get("operator", "+")  # Get the operator from the environment variable
 res = calculate(v1, v2, operator)  # Perform the calculation
 
 #sand data about v1 and v2 and operator to server
+
+# Generate the HTML page
+# ...
 
 # Generate the HTML page
 html_content = """
@@ -90,35 +92,23 @@ html_content = """
 <body>
     <div class="calculator">
         <h1>Calculator</h1>
-        
-        <p>Value 1: <input type="text" id="v1" value="{v1}"></p>
-        <p>Value 2: <input type="text" id="v2" value="{v2}"></p>
-        
-        <button onclick="sandData(v1, v2, '+')">+</button>
-        <button onclick="sandData(v1, v2, '-')">-</button>
-        <button onclick="sandData(v1, v2, '*')">*</button>
-        <button onclick="sandData(v1, v2, '/')">/</button>
-        
-        <p id="result"></p>
-    </div>
-    
-    <div class="calculator">
-        <h1>Calculator</h1>
-        
-        <p>Value 1: <input type="text" id="v1" value="{v1}"></p>
-        <p>Value 2: <input type="text" id="v2" value="{v2}"></p>
-        
-        <a href="/bin-cgi/calculator.py?v1={v1}&v2={v2}&operator=+">Add</a>
-        <a href="/bin-cgi/calculator.py?v1={v1}&v2={v2}&operator=-">Subtract</a>
-        <a href="/bin-cgi/calculator.py?v1={v1}&v2={v2}&operator=*">Multiply</a>
-        <a href="/bin-cgi/calculator.py?v1={v1}&v2={v2}&operator=/">Divide</a>
-        
-        <p id="result"></p>
+        <form action="/bin-cgi/calculator(GetRequest).py" method="get">
+            <p>Value 1: <input type="text" name="v1" value="{v1}"></p>
+            <p>Value 2: <input type="text" name="v2" value="{v2}"></p>
+            <button type="submit" name="operator" value="+">+</button>
+            <button type="submit" name="operator" value="-">-</button>
+            <button type="submit" name="operator" value="*">*</button>
+            <button type="submit" name="operator" value="/">/</button>
+        </form>
+        <p id="result">Result: {result}</p>
+        <div class="row">
+    <!-- Add a button to move to the main page -->
+    <a href="/"><button>Main Page</button></a>
+  </div>
     </div>
 </body>
 </html>
-""".format(v1=v1, v2=v2, operator=operator)
-
+""".format(v1=v1, v2=v2, operator=operator, result=res)
 
 # Print the HTML content to the standard output
 print(html_content)

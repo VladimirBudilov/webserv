@@ -10,13 +10,14 @@ bool Request::hasCGI() {
 void Request::parse_request(const std::string &request) {
 	if(request.find("\r\n") == std::string::npos)
 	{
-		std::cout << "bad request" << std::endl;
+		std::cout << "empty request" << std::endl;
 		return;
 	}
     std::string line = request.substr(0, request.find("\r\n"));
     std::stringstream ss(line);
     std::string ver;
     ss >> this->method >> this->path >> ver;
+    std::cout << "path: " << this->path << std::endl;
     if (ver == "HTTP/1.1") {
 		this->version = true;
 	} else
@@ -26,7 +27,7 @@ void Request::parse_request(const std::string &request) {
 	{
 		if (this->path.find("?") == this->path.size() - 1 || this->path.find("?") == 0)
 		{
-			std::cout << "bad request" << std::endl;
+			std::cout << "bad request(?)" << std::endl;
 			return;
 		}
 
@@ -43,7 +44,7 @@ void Request::parse_request(const std::string &request) {
 
 	if (request.find("\r\n\r\n") == std::string::npos)
 	{
-		std::cout << "bad request" << std::endl;
+		std::cout << "request dont have end" << std::endl;
 		return;
 	}
 
@@ -52,7 +53,7 @@ void Request::parse_request(const std::string &request) {
     while (i < pos) {
 		if(request.find("\r\n") == std::string::npos)
 		{
-			std::cout << "bad request" << std::endl;
+			std::cout << "bad request(\"\\r\\n\")" << std::endl;
 			return;
 		}
         line = request.substr(i, request.find("\r\n", i) - i);
@@ -64,6 +65,7 @@ void Request::parse_request(const std::string &request) {
 	if (method != "GET" && method != "POST" && method != "DELETE")
 	{
 		//TODO: bad request, send 501 error code (not implemented)
+        std::cout << "bad request(method)" << std::endl;
 	}
 	if (method == "POST")
     	this->body = request.substr(pos + 4);
