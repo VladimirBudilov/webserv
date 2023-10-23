@@ -1,23 +1,54 @@
 import os
+from datetime import datetime
 
-# Get the BODY data from standard input
-file = os.environ.get("BODY")
 
-# Read data from the file
-body_data = file.read()
-
-# Get the path where you want to create the new file (replace with your actual path)
-file_path = os.environ.get("PATH_TRANSLATED")
-
-# Check if the BODY data and PATH_TRANSLATED exist
-if body_data and file_path:
+# Get the file path
+file_path = os.environ.get("BODY_FILE")
+file_tipe = os.environ.get("FILE_TYPE", "txt")
+# Check if the file exists
+if os.path.exists(file_path):
     try:
-        # Open the file for writing
-        with open(file_path, "w") as file:
-            # Write the BODY data to the file
-            file.write(body_data)
-        print("Data written to the file successfully.")
+        # Open the file for reading
+        with open(file_path, "r") as file:
+            # Read the content of the file
+            file_data = file.read()
+
+        # Check if data was read successfully
+        if file_data:
+            # Split the file_data into words using space as a delimiter
+            words = file_data.split()
+
+            # Use the first word to create the new file name
+            if words:
+                file_data = ' '.join(words[1:])
+                # Get the current time
+                current_time = datetime.now()
+                # Format the current time as a string with a specific format
+                time_format = "%Y%m%d%H%M%S"  # You can customize the format as needed
+                formatted_time = current_time.strftime(time_format)
+                # Create a new file name with the current time at the beginning
+                new_file_name = "{}_{}".format(formatted_time, words[0])
+                # Get the path where you want to create the new file
+                new_file_path = os.environ.get("PATH_TRANSLATED")
+
+                # Check if PATH_TRANSLATED is set
+                if new_file_path:
+                    new_file_path = os.path.join(new_file_path, new_file_name)
+                    try:
+                        # Create and open the new file for writing
+                        with open(new_file_path, "w") as new_file:
+                            # Write the content of the original file to the new file
+                            new_file.write(file_data)
+                        print("Data written to the new file: {}".format(new_file_path))
+                    except Exception as e:
+                        print("Error creating the new file:", e)
+                else:
+                    print("PATH_TRANSLATED environment variable is not set.")
+            else:
+                print("File is empty.")
+        else:
+            print("File is empty.")
     except Exception as e:
         print("Error:", e)
 else:
-    print("BODY or PATH_TRANSLATED environment variables are not set.")
+    print("File not found at:", file_path)

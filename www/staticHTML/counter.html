@@ -56,7 +56,6 @@
     <!-- Add a button to move to the main page -->
     <a href="/"><button>Main Page</button></a>
   </div>
-
   <div class="row">
     <!-- Adjusted JavaScript code with larger button -->
     <button id="button">Click me</button>
@@ -73,7 +72,6 @@
             },
             body: result.innerText,
           };
-
           try {
             const resp = await fetch('/bin-cgi/increment.py', options);
             if (resp.ok) {
@@ -86,7 +84,6 @@
           }
         });
       }
-
       // Call the function to set up the event listener
       sendPostRequest();
     </script>

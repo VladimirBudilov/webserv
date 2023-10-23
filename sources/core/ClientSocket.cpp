@@ -30,7 +30,6 @@ ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &
 void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest) {
     _clientInterest = clientInterest;
 }
-
 bool ClientSocket::isValidRequest() {
     if (Request.RequestData.empty())
         return false;
@@ -40,8 +39,9 @@ bool ClientSocket::isValidRequest() {
     ///TODO add correct Request validation
     return false;
 }
-
 void ClientSocket::generateCGIResponse(const std::string &path, const Location &location) {
+    std::cout << Request.RequestData << std::endl;
+    std::cout << "its all request)" << std::endl;
     const char *pythonScriptPath = path.c_str();
     const char *pythonInterpreter = location.getCgiPass().c_str();
     std::string pathInfo;
@@ -51,18 +51,16 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
     char **pythonEnv = new char *[3 + Request.getArgs().size() + hasBody];
     std::map<std::string, std::string> env = Request.getArgs();
     if (!Request.getBody().empty()) {
-        tmpBodyFile = "BODY" + std::to_string(_socket);
-        std::ofstream file(tmpBodyFile.c_str());
+        tmpBodyFile = "BODY_" + std::to_string(_socket);
+        std::ofstream file(DataStorage::root + "/www/" + tmpBodyFile.c_str());
         file << Request.getBody();
         file.close();
     }
-
     pathInfo = path.substr(path.find(".py") + 3, path.size() - 1);
-    pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www" + pathInfo;
+    pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo;
     pathInfo = "PATH_INFO=" + pathInfo;
     pythonEnv[0] = strdup(pathInfo.c_str());
     pythonEnv[1] = strdup(pathTranslated.c_str());
-    pythonEnv[2] = NULL;
     ///put all args in env
     int i = 2;
     for (std::map<std::string, std::string>::iterator it = env.begin(); it != env.end(); it++) {
@@ -72,7 +70,8 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
     }
     if(hasBody)
     {
-        pythonEnv[i++] = strdup(("BODY_FILE=" + tmpBodyFile).c_str());
+        pythonEnv[i++] = strdup(("BODY_FILE=" + DataStorage::root + "/www/" + tmpBodyFile).c_str());
+        std::cout << "BODY_FILE=" + DataStorage::root + "/www/" + tmpBodyFile << std::endl;
     }
     pythonEnv[i] = NULL;
     ///generate args for execve
@@ -81,7 +80,7 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
     pythonArgs[1] = strdup(pythonScriptPath);
     pythonArgs[2] = NULL;
     std::string tmpCGIFile = "CGI" + std::to_string(_socket);
-    int fdCGIFile = open(tmpCGIFile.c_str(), O_RDWR | O_CREAT, 0666);
+    int fdCGIFile = open(( DataStorage::root + "/www/" + tmpCGIFile).c_str(), O_RDWR | O_CREAT, 0666);
     if (fdCGIFile == -1) {
         perror("Ошибка при открытии файла");
         exit(1);
@@ -94,17 +93,20 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
             exit(1);
         }
         close(fdCGIFile);
-
     }
     waitpid(pid, NULL, 0);
-    std::ifstream file(tmpCGIFile.c_str());
+    std::ifstream file((DataStorage::root + "/www/" + tmpCGIFile).c_str());
     std::getline(file, Response.Body, '\0');
+    std::cout << Response.Body << std::endl;
+    std::cout << "its all body)" << std::endl;
     file.close();
-    remove(tmpCGIFile.c_str());
+    remove((DataStorage::root + "/www/" + tmpCGIFile).c_str());
+    remove((DataStorage::root + "/www/" + tmpBodyFile).c_str());
     delete[] pythonArgs;
     delete[] pythonEnv;
-
     Response.ResponseData = Response.Status + Response.Body;
+    std::cout << Response.ResponseData << std::endl;
+    std::cout << "its all response)" << std::endl;
     Response.sentLength = 0;
 }
 
@@ -151,6 +153,8 @@ void ClientSocket::generateResponse() {
     ///create response for autoindex
     if (currentLocation.isAutoindex() || autoindex) {
         std::cout << "autoindex" << std::endl;
+        std::cout << DataStorage::root + "/www" << " and " << path + Request.getPath() << path << std::endl;
+
         std::string html = generate_autoindex(DataStorage::root + "/www", path + Request.getPath());
         Response.Body = html;
         Response.ResponseData = Response.Status + Response.Body;
@@ -163,13 +167,13 @@ void ClientSocket::generateResponse() {
     getDataByFullPath(root, currentConfig, currentLocation);
 }
 
-std::string ClientSocket::generate_autoindex(const std::string &rootPath, const std::string &location) {
+std::string
+ClientSocket::generate_autoindex(const std::string &rootPath, const std::string &location) {
     DIR *dir;
     struct dirent *ent;
     struct stat filestat;
     std::stringstream html;
     std::string path = rootPath + location;
-
     html << "<html><body><ul>";
 
     if ((dir = opendir(path.c_str())) != NULL) {
@@ -180,11 +184,11 @@ std::string ClientSocket::generate_autoindex(const std::string &rootPath, const 
             std::string mod_time = ctime(&filestat.st_mtime);
             mod_time = mod_time.substr(0, mod_time.size() - 1);  // remove trailing newlinelocation + "/"
             if (location[location.size() - 1] == '/') {
-                html << "<li><a href=\"" << location + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+                html << "<li><a href=\"" << "http://localhost:8080" << location + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
                      << " (size: " << filestat.st_size << ", "
                      << "modified: " << mod_time << ")</li>";
             } else {
-                html << "<li><a href=\"" << location + "/" + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+                html << "<li><a href=\"" << "http://localhost:8080" << location + "" + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
                      << " (size: " << filestat.st_size << ", "
                      << "modified: " << mod_time << ")</li>";
             }
