@@ -40,8 +40,6 @@ bool ClientSocket::isValidRequest() {
     return false;
 }
 void ClientSocket::generateCGIResponse(const std::string &path, const Location &location) {
-    std::cout << Request.RequestData << std::endl;
-    std::cout << "its all request)" << std::endl;
     const char *pythonScriptPath = path.c_str();
     const char *pythonInterpreter = location.getCgiPass().c_str();
     std::string pathInfo;
@@ -97,20 +95,26 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
     waitpid(pid, NULL, 0);
     std::ifstream file((DataStorage::root + "/www/" + tmpCGIFile).c_str());
     std::getline(file, Response.Body, '\0');
-    std::cout << Response.Body << std::endl;
-    std::cout << "its all body)" << std::endl;
     file.close();
     remove((DataStorage::root + "/www/" + tmpCGIFile).c_str());
     remove((DataStorage::root + "/www/" + tmpBodyFile).c_str());
     delete[] pythonArgs;
     delete[] pythonEnv;
     Response.ResponseData = Response.Status + Response.Body;
-    std::cout << Response.ResponseData << std::endl;
-    std::cout << "its all response)" << std::endl;
     Response.sentLength = 0;
 }
 
 void ClientSocket::generateResponse() {
+
+    std::cout << "request start" << std::endl;
+    std::cout << Request.RequestData << std::endl;
+    std::cout << "request end" << std::endl;
+    std::cout << std::endl;
+    std::cout << "body start" << std::endl;
+    std::cout << Request.getBody() << std::endl;
+    std::cout << "body end" << std::endl;
+
+
     std::string method = Request.getMethod();
     std::string location = Request.getPath();
     std::string host = Request.getHeaders().find("Host")->second;
@@ -153,7 +157,8 @@ void ClientSocket::generateResponse() {
     ///create response for autoindex
     if (currentLocation.isAutoindex() || autoindex) {
         std::cout << "autoindex" << std::endl;
-        std::string html = generate_autoindex(DataStorage::root + "/www", currentConfig.getServerName() + std::to_string(currentConfig.getPort()));
+        std::string autoindexLocation = Request.getArgs().find("path")->second + Request.getPath();
+        std::string html = generate_autoindex(DataStorage::root + "/www", autoindexLocation);
         Response.Body = html;
         Response.ResponseData = Response.Status + Response.Body;
         return;

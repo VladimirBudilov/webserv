@@ -5,48 +5,9 @@
 </head>
 <body>
 <h1>Upload Files</h1>
-<form id="fileUploadForm">
-  <input type="file" name="file1" accept=".txt, .jpg, .png">
-  <input type="file" name="file2" accept=".pdf">
-  <!-- Add more file input fields for other file types if needed -->
-  <input type="submit" value="Upload Files">
+<form action="/uploader" method="POST" enctype="multipart/form-data">
+  <input name="file" type="file" multiple>
+  <button type="submit">Upload</button>
 </form>
-
-<script>
-  document.getElementById('fileUploadForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-
-    // Create a new FormData object
-    const formData = new FormData();
-
-    // Get the selected files from the file input fields
-    const file1 = document.querySelector('input[name="file1"]').files[0];
-    const file2 = document.querySelector('input[name="file2"]').files[0];
-    // Add the files to the FormData object
-    formData.append('file1', file1);
-    formData.append('file2', file2);
-    // You can continue to append more files as needed
-
-    // Create an XMLHttpRequest object
-    const xhr = new XMLHttpRequest();
-
-    // Define the POST request URL
-    const url = 'your_server_endpoint_here';
-
-    // Configure the request
-    xhr.open('POST', url, true);
-
-    // Set a callback function to handle the response
-    xhr.onreadystatechange = function () {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        // Handle the server's response here
-        console.log(xhr.responseText);
-      }
-    };
-
-    // Send the FormData object as the request body
-    xhr.send(formData);
-  });
-</script>
 </body>
 </html>
