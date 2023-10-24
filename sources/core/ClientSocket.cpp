@@ -153,9 +153,7 @@ void ClientSocket::generateResponse() {
     ///create response for autoindex
     if (currentLocation.isAutoindex() || autoindex) {
         std::cout << "autoindex" << std::endl;
-        std::cout << DataStorage::root + "/www" << " and " << path + Request.getPath() << path << std::endl;
-
-        std::string html = generate_autoindex(DataStorage::root + "/www", path + Request.getPath());
+        std::string html = generate_autoindex(DataStorage::root + "/www", currentConfig.getServerName() + std::to_string(currentConfig.getPort()));
         Response.Body = html;
         Response.ResponseData = Response.Status + Response.Body;
         return;
@@ -184,11 +182,11 @@ ClientSocket::generate_autoindex(const std::string &rootPath, const std::string 
             std::string mod_time = ctime(&filestat.st_mtime);
             mod_time = mod_time.substr(0, mod_time.size() - 1);  // remove trailing newlinelocation + "/"
             if (location[location.size() - 1] == '/') {
-                html << "<li><a href=\"" << "http://localhost:8080" << location + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+                html << "<li><a href=\"" << location + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
                      << " (size: " << filestat.st_size << ", "
                      << "modified: " << mod_time << ")</li>";
             } else {
-                html << "<li><a href=\"" << "http://localhost:8080" << location + "" + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
+                html << "<li><a href=\"" << location + "/" + ent->d_name << "?autoindex=1\">" << ent->d_name << "</a> "
                      << " (size: " << filestat.st_size << ", "
                      << "modified: " << mod_time << ")</li>";
             }
@@ -196,11 +194,12 @@ ClientSocket::generate_autoindex(const std::string &rootPath, const std::string 
         closedir(dir);
     } else {
         std::fstream file(path.c_str());
+        std::cout << path << std::endl;
+
         if (!file.is_open())
             html << "Error: cannot open file" << std::endl;
         else {
             file >> html.rdbuf();
-            //std::cout << file << std::endl;
             file.close();
             Response.Status = "HTTP/1.1 200 OK\n"
                               "Content-Type: image/jpeg\n\n";
