@@ -4,7 +4,8 @@ from datetime import datetime
 
 # Get the file path
 file_path = os.environ.get("BODY_FILE")
-file_tipe = os.environ.get("FILE_TYPE", "txt")
+file_name = os.environ.get("FILE_NAME", "new_file")
+file_type = os.environ.get("FILE_TYPE", "txt")
 # Check if the file exists
 if os.path.exists(file_path):
     try:
@@ -20,14 +21,14 @@ if os.path.exists(file_path):
 
             # Use the first word to create the new file name
             if words:
-                file_data = ' '.join(words[1:])
+                file_data = words
                 # Get the current time
                 current_time = datetime.now()
                 # Format the current time as a string with a specific format
                 time_format = "%Y%m%d%H%M%S"  # You can customize the format as needed
                 formatted_time = current_time.strftime(time_format)
                 # Create a new file name with the current time at the beginning
-                new_file_name = "{}_{}".format(formatted_time, words[0])
+                new_file_name = "{}_{}.{}".format(formatted_time, file_name, file_type)
                 # Get the path where you want to create the new file
                 new_file_path = os.environ.get("PATH_TRANSLATED")
 

@@ -25,6 +25,8 @@ ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &
     fcntl(_socket, F_SETFL, O_NONBLOCK, FD_CLOEXEC);
     EV_SET(&_clientInterest, _socket, EVFILT_READ, EV_ADD, 0, 0, NULL);
     kevent(kq, &_clientInterest, 1, NULL, 0, NULL);
+    _isReadyToMakeResponse = false;
+    ResponseSize = 0;
 }
 
 void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest) {
@@ -106,12 +108,9 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
 
 void ClientSocket::generateResponse() {
 
-    std::cout << "request start" << std::endl;
-    std::cout << Request.RequestData << std::endl;
-    std::cout << "request end" << std::endl;
-    std::cout << std::endl;
+
     std::cout << "body start" << std::endl;
-    std::cout << Request.getBody() << std::endl;
+    std::cout << Request.RequestData << std::endl;
     std::cout << "body end" << std::endl;
 
 
@@ -323,5 +322,37 @@ bool ClientSocket::isCGI(std::string path) {
     if (path.size() > 2 && path.substr(path.size() - 3, 3) == ".py")
         return true;
     return false;
+}
+
+bool ClientSocket::CanMakeResponse() {
+    ///check that request method is get and request is complete
+    if (Request.getMethod() != "GET" && Request.getMethod() != "POST" &&
+        Request.RequestData.find("\r\n\r\n") != std::string::npos) {
+        Request.parse_request(Request.RequestData);
+        std::cout<< "content size " << Request.getArgs().find("Content-Length")->second << std::endl;
+        std::cout<< "Body size " << Request.getBody().size() << std::endl;
+        if(Request.getMethod() == "GET") {
+            std::cout << "GET request recived" << std::endl;
+            _isReadyToMakeResponse = true;
+        }
+    }
+    ///check that request method is post and request is complete
+
+    if(Request.getMethod() == "POST")
+    {
+        Request.parse_request(Request.RequestData);
+        std::cout<< "content size " << Request.getArgs().find("Content-Length")->second << std::endl;
+        std::cout<< "Body size " << Request.getBody().size() << std::endl;
+    }
+
+    if (Request.getMethod() == "POST" && std::atoi((Request.getArgs().find("Content-Length")->second).c_str()) == ResponseSize) {
+        std::cout << "POST request recived" << std::endl;
+        _isReadyToMakeResponse = true;
+    }
+    return _isReadyToMakeResponse;
+}
+
+void ClientSocket::setIsReadyToMakeResponse(bool isReadyToMakeResponse) {
+    _isReadyToMakeResponse = isReadyToMakeResponse;
 }
 

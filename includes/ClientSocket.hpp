@@ -18,8 +18,9 @@ private:
     std::string _read;
     size_t _much_written;
     ClientSocket(){}; // private default constructor
-
+    bool _isReadyToMakeResponse;
 public:
+    int ResponseSize;
     Request Request;
     Response Response;
     ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs);
@@ -63,6 +64,10 @@ public:
     bool isValidMethod(const std::string &method, const Location &location);
 
     bool isCGI(std::string path);
+
+    bool CanMakeResponse();
+
+    void setIsReadyToMakeResponse(bool isReadyToMakeResponse);
 };
 
 

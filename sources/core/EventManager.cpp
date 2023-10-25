@@ -14,7 +14,8 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
             clientSocketFd = getClientSocketFd(clientSockets, currentEventSocketFd);
             if (serverSocketFd != -1) {
                 /// new connection with server
-                ClientSocket clientSocket(currentEventSocketFd, _kq, getServerSocketBySocketFd(serverSockets,currentEventSocketFd).getConfig());
+                ClientSocket clientSocket(currentEventSocketFd, _kq,
+                                          getServerSocketBySocketFd(serverSockets, currentEventSocketFd).getConfig());
                 clientSockets.push_back(clientSocket);
                 /// client-server communication
             } else if (clientSocketFd != -1) {
@@ -64,13 +65,20 @@ void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::k
     char buf[1024];
     int recived = recv(clientSocket.getSocket(), buf, sizeof(buf), 0);
     buf[recived] = '\0';
+    clientSocket.ResponseSize += recived;
     clientSocket.Request.RequestData += buf;
     validareEOF(clientSocket, event);
 }
 
 void EventManager::createResponse(ClientSocket &clientSocket) const {
-    if (!clientSocket.isValidRequest())
+    if (!clientSocket.CanMakeResponse())
         return;
+    if (!clientSocket.isValidRequest()) {
+        RemoveCLientSocketEvent(clientSocket);
+        close(clientSocket.getSocket());
+        return;
+    }
+    std::cout << "request is valid" << std::endl;
     clientSocket.generateResponse();
     if (clientSocket.Response.ResponseData.size() > 0)
         addClientSocketEvent(clientSocket);
@@ -96,7 +104,8 @@ void EventManager::registerListeningEvent(int socket) {
     _eventsList.push_back(event);
 }
 
-void EventManager::validareEOF(const ClientSocket &clientSocket, const EventManager::kEvent &event) const {
+void EventManager::validareEOF(ClientSocket &clientSocket, const EventManager::kEvent &event) const {
+    ///check that request is empty and EOF
     if (event.flags & EV_EOF && clientSocket.Request.RequestData.size() == 0) {
         std::cout << "eof" << std::endl;
         close(clientSocket.getSocket());
