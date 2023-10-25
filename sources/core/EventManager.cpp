@@ -63,12 +63,17 @@ void EventManager::writeResponse(ClientSocket &clientSocket, std::list<ClientSoc
 
 void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::kEvent &event) const {
     char buf[1024];
-    int recived = recv(clientSocket.getSocket(), buf, sizeof(buf), 0);
-    buf[recived] = '\0';
-    clientSocket.ResponseSize += recived;
-    clientSocket.Request.RequestData += buf;
+    int received = recv(clientSocket.getSocket(), buf, sizeof(buf), 0);
+    if (received > 0)
+        buf[received] = '\0';
+    clientSocket.Request.RequestData.append(buf, received);
     validareEOF(clientSocket, event);
+
 }
+
+
+//std::cout << "request data: " << clientSocket.Request.RequestData << std::endl;
+//validareEOF(clientSocket, event);
 
 void EventManager::createResponse(ClientSocket &clientSocket) const {
     if (!clientSocket.CanMakeResponse())
@@ -89,6 +94,7 @@ void EventManager::RemoveCLientSocketEvent(const ClientSocket &clientSocket) con
     struct kevent currentReadingevent;
     EV_SET(&currentReadingevent, clientSocket.getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
     kevent(_kq, &currentReadingevent, 1, NULL, 0, NULL);
+    std::cout << "remove client socket event" << std::endl;
 }
 
 void EventManager::addClientSocketEvent(const ClientSocket &clientSocket) const {
