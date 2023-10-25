@@ -42,7 +42,6 @@ bool ClientSocket::isValidRequest() {
     return true;
 }
 void ClientSocket::generateCGIResponse(const std::string &path, const Location &location) {
-    //std::cout << path << std::endl;
     std::cout << location.getCgiPass() << std::endl;
     const char *pythonScriptPath = path.c_str();
     const char *pythonInterpreter = location.getCgiPass().c_str();
@@ -111,7 +110,7 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
 }
 
 void ClientSocket::generateResponse() {
-    std::cout << Request.getBody() << std::endl;
+    std::cout << "body: " << Request.getBody() << std::endl;
 
     std::string method = Request.getMethod();
     std::string location = Request.getPath();

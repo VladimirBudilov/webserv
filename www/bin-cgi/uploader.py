@@ -27,7 +27,7 @@ if os.path.exists(file_path):
                 time_format = "%Y%m%d%H%M%S"  # You can customize the format as needed
                 formatted_time = current_time.strftime(time_format)
                 # Create a new file name with the current time at the beginning
-                new_file_name = "tm.jpeg"
+                new_file_name = "tm.txt"
                 # Get the path where you want to create the new file
                 new_file_path = os.environ.get("PATH_TRANSLATED")
 

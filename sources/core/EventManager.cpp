@@ -15,7 +15,7 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
             if (serverSocketFd != -1) {
                 /// new connection with server
                 ClientSocket clientSocket(currentEventSocketFd, _kq,
-                                          getServerSocketBySocketFd(serverSockets, currentEventSocketFd).getConfig());
+                getServerSocketBySocketFd(serverSockets, currentEventSocketFd).getConfig());
                 clientSockets.push_back(clientSocket);
                 /// client-server communication
             } else if (clientSocketFd != -1) {
@@ -68,12 +68,7 @@ void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::k
         buf[received] = '\0';
     clientSocket.Request.RequestData.append(buf, received);
     validareEOF(clientSocket, event);
-
 }
-
-
-//std::cout << "request data: " << clientSocket.Request.RequestData << std::endl;
-//validareEOF(clientSocket, event);
 
 void EventManager::createResponse(ClientSocket &clientSocket) const {
     if (!clientSocket.CanMakeResponse())
