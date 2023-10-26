@@ -25,9 +25,9 @@ private:
     int getEventsNumber();
     int getServerSocketFd(std::vector<ServerSocket> &Sockets, int currentEventSocket) const;
     int getClientSocketFd(std::list<ClientSocket> &Sockets, int currentEventSocket) const;
-    void validareEOF(ClientSocket &clientSocket, const EventManager::kEvent &event) const;
+    void validateEOF(ClientSocket &clientSocket, const EventManager::kEvent &event) const;
     void addClientSocketEvent(const ClientSocket &clientSocket) const;
-    void RemoveCLientSocketEvent(const ClientSocket &clientSocket) const;
+    void RemoveClientSocketEvent(const ClientSocket &clientSocket) const;
     void readRequest(ClientSocket &clientSocket, const kEvent &event) const;
     void writeResponse(ClientSocket &clientSocket, std::list<ClientSocket> &clientSockets) const;
 

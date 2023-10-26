@@ -43,7 +43,8 @@ public:
 
     bool isValidRequest();
 
-    void generateCGIResponse(const std::string &path, const Location &location);
+    void generateCGIResponse(const std::string &path, const Location &location, const std::string &
+    pathToUpload);
 
     void generateResponse();
 
@@ -55,7 +56,9 @@ public:
 
     void getFoolPath(std::string &pathToUpdate) const;
 
-    void getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location);
+    void getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location,
+                           const std::string
+                           &pathToUpload);
 
     void getErrorPageData(const std::string &errorRoot);
 

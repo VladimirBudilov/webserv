@@ -11,7 +11,10 @@ if os.path.exists(file_path):
         if file_data:
             try:
                 result = int(file_data) + 1
+                print("HTTP/1.1 200 OK")
+                print("\r\n")
                 print(result)
+                print("\r\n")
             except ValueError:
                 print("Invalid input: BODY is not a valid integer.")
         else:

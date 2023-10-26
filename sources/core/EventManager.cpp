@@ -55,7 +55,7 @@ void EventManager::writeResponse(ClientSocket &clientSocket, std::list<ClientSoc
     );
     sentLength += wasSent;
     if (sentLength >= length) {
-        RemoveCLientSocketEvent(clientSocket);
+        RemoveClientSocketEvent(clientSocket);
         close(clientSocket.getSocket());
         clientSockets.remove(clientSocket);
     }
@@ -67,14 +67,14 @@ void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::k
     if (received > 0)
         buf[received] = '\0';
     clientSocket.Request.RequestData.append(buf, received);
-    validareEOF(clientSocket, event);
+    validateEOF(clientSocket, event);
 }
 
 void EventManager::createResponse(ClientSocket &clientSocket) const {
     if (!clientSocket.CanMakeResponse())
         return;
     if (!clientSocket.isValidRequest()) {
-        RemoveCLientSocketEvent(clientSocket);
+        RemoveClientSocketEvent(clientSocket);
         close(clientSocket.getSocket());
         return;
     }
@@ -82,13 +82,13 @@ void EventManager::createResponse(ClientSocket &clientSocket) const {
     clientSocket.generateResponse();
     if (clientSocket.Response.ResponseData.size() > 0)
         addClientSocketEvent(clientSocket);
-    RemoveCLientSocketEvent(clientSocket);
+    RemoveClientSocketEvent(clientSocket);
 }
 
-void EventManager::RemoveCLientSocketEvent(const ClientSocket &clientSocket) const {
-    struct kevent currentReadingevent;
-    EV_SET(&currentReadingevent, clientSocket.getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    kevent(_kq, &currentReadingevent, 1, NULL, 0, NULL);
+void EventManager::RemoveClientSocketEvent(const ClientSocket &clientSocket) const {
+    struct kevent currentReadingEvent;
+    EV_SET(&currentReadingEvent, clientSocket.getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    kevent(_kq, &currentReadingEvent, 1, NULL, 0, NULL);
     std::cout << "remove client socket event" << std::endl;
 }
 
@@ -105,7 +105,7 @@ void EventManager::registerListeningEvent(int socket) {
     _eventsList.push_back(event);
 }
 
-void EventManager::validareEOF(ClientSocket &clientSocket, const EventManager::kEvent &event) const {
+void EventManager::validateEOF(ClientSocket &clientSocket, const EventManager::kEvent &event) const {
     ///check that request is empty and EOF
     if (event.flags & EV_EOF && clientSocket.Request.RequestData.size() == 0) {
         std::cout << "eof" << std::endl;

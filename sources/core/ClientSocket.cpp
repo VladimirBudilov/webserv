@@ -41,8 +41,9 @@ bool ClientSocket::isValidRequest() {
     ///TODO add correct Request validation
     return true;
 }
-void ClientSocket::generateCGIResponse(const std::string &path, const Location &location) {
-    std::cout << location.getCgiPass() << std::endl;
+void ClientSocket::generateCGIResponse(const std::string &path, const Location &location, const std::string &
+pathToUpload) {
+    //std::cout << location.getCgiPass() << std::endl;
     const char *pythonScriptPath = path.c_str();
     const char *pythonInterpreter = location.getCgiPass().c_str();
     std::string pathInfo;
@@ -60,7 +61,8 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
     pathInfo = path.substr(path.find(".py") + 3, path.size() - 1);
     pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo;
     std::cout << "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo << std::endl;
-    pathInfo = "PATH_INFO=" + pathInfo;
+    pathInfo = "PATH_INFO=" + DataStorage::root + "/www/" + pathToUpload;
+    std::cout << "PATH_INFO=" + DataStorage::root + "/www/" + pathToUpload << std::endl;
     pythonEnv[0] = strdup(pathInfo.c_str());
     pythonEnv[1] = strdup(pathTranslated.c_str());
     ///put all args in env
@@ -105,24 +107,29 @@ void ClientSocket::generateCGIResponse(const std::string &path, const Location &
     remove((DataStorage::root + "/www/" + tmpBodyFile).c_str());
     delete[] pythonArgs;
     delete[] pythonEnv;
-    Response.ResponseData = Response.Status + Response.Body;
+    Response.ResponseData = Response.Body;
     Response.sentLength = 0;
 }
 
 void ClientSocket::generateResponse() {
-    std::cout << "body: " << Request.getBody() << std::endl;
+    //std::cout << "body: " << Request.getBody() << std::endl;
 
     std::string method = Request.getMethod();
     std::string location = Request.getPath();
     std::string host = Request.getHeaders().find("Host")->second;
-    bool autoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
-    std::string path = Request.getPath();
+    bool isAutoindex = Request.getArgs().find("isAutoindex") != Request.getArgs().end();
+    std::string placeToUpload;
     ServerConfig currentConfig;
     Location currentLocation;
     std::string root;
     host = host.substr(0, host.find(':'));
     currentConfig = _config[0];
     std::vector<Location> locations = _config[0].getLocations();
+    ///if request is CGI store all data from location after .py in another string
+    if (location.find(".py") != std::string::npos) {
+        placeToUpload = location.substr(location.find(".py") + 3, location.size() - 1);
+        location = location.substr(0, location.find(".py") + 3);
+    }
     ///get config by host another will be default
     std::string configHost;
     for (size_t i = 0; i < _config.size(); i++) {
@@ -140,20 +147,20 @@ void ClientSocket::generateResponse() {
             break;
         }
     }
-    if (root.empty() && !autoindex) {
+    if (root.empty() && !isAutoindex) {
         std::cout << "empty root" << std::endl;
         generateErrorPage(currentConfig, 404);
         return;
     }
     ///check method
-    if (!isValidMethod(method, currentLocation) && !autoindex) {
+    if (!isValidMethod(method, currentLocation) && !isAutoindex) {
         std::cout << "invalid method" << std::endl;
         generateErrorPage(currentConfig, 405);
         return;
     }
-    ///create response for autoindex
-    if (currentLocation.isAutoindex() || autoindex) {
-        std::cout << "autoindex" << std::endl;
+    ///create response for isAutoindex
+    if (currentLocation.isAutoindex() || isAutoindex) {
+        std::cout << "isAutoindex" << std::endl;
         std::string autoindexLocation = Request.getArgs().find("path")->second + Request.getPath();
         std::string html = generate_autoindex(DataStorage::root + "/www", autoindexLocation);
         Response.Body = html;
@@ -164,7 +171,7 @@ void ClientSocket::generateResponse() {
     if (root[root.size() - 1] == '/')
         root += currentLocation.getIndex();
     getFoolPath(root);
-    getDataByFullPath(root, currentConfig, currentLocation);
+    getDataByFullPath(root, currentConfig, currentLocation, placeToUpload);
 }
 
 std::string
@@ -211,14 +218,16 @@ ClientSocket::generate_autoindex(const std::string &rootPath, const std::string 
     return html.str();
 }
 
-void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location) {
+void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location,
+                                     const std::string
+                                     &pathToUpload) {
     std::ifstream file(path.c_str());
     std::string str;
     std::string response;
     ///handle cgi(.py scripts)
     if (isCGI(path)) {
         std::cout << "CGI" << std::endl;
-        generateCGIResponse(path, location);
+        generateCGIResponse(path, location, pathToUpload);
         return;
     }
         ///handle static file
