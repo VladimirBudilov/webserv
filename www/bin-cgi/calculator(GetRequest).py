@@ -110,5 +110,12 @@ html_content = """
 </html>
 """.format(v1=v1, v2=v2, operator=operator, result=res)
 
+# Print the HTTP header
+print("HTTP/1.1 200 OK")
+print("\r\n")
+
+
+
+
 # Print the HTML content to the standard output
 print(html_content)

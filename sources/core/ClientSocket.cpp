@@ -117,7 +117,7 @@ void ClientSocket::generateResponse() {
     std::string method = Request.getMethod();
     std::string location = Request.getPath();
     std::string host = Request.getHeaders().find("Host")->second;
-    bool isAutoindex = Request.getArgs().find("isAutoindex") != Request.getArgs().end();
+    bool isAutoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
     std::string placeToUpload;
     ServerConfig currentConfig;
     Location currentLocation;

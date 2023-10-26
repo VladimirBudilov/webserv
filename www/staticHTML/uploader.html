@@ -37,15 +37,29 @@
     }
 
     .landing button {
-      width: 40%; /* Increase button width */
-      padding: 15px; /* Increase button padding */
-      margin: 10px; /* Increase button margin */
-      font-size: 24px; /* Increase font size */
+      width: 40%;
+      padding: 15px;
+      margin: 10px;
+      font-size: 24px;
       cursor: pointer;
       border-radius: 10px;
       border: #2b7a78 1px solid;
       background-color: #b7e1e0;
     }
+
+    .landing a button {
+      width: 40%;
+      padding: 15px;
+      margin: 10px;
+      font-size: 24px;
+      cursor: pointer;
+      border-radius: 10px;
+      border: #2b7a78 1px solid;
+      background-color: #b7e1e0;
+      text-decoration: none;
+      color: black;
+    }
+
   </style>
 </head>
 <body>
@@ -56,10 +70,13 @@
     <a href="/"><button>Main Page</button></a>
   </div>
   <div class="row">
-  <form id="uploadObj" enctype="multipart/form-data" action = "/bin-cgi/uploader.py/data" method="post" target="_blank">
-    <p>File: <input type="file" name="filename" id="fileid" class="form-control">
-      <input type="submit" value="SEND" href="#"></p>
-  </form>
+    <form id="uploadObj" enctype="multipart/form-data" action="/bin-cgi/uploader.py/data" method="post" target="_blank">
+      <p>
+        File:
+        <input type="file" name="filename" id="fileid" class="form-control">
+        <input type="submit" value="SEND" href="#">
+      </p>
+    </form>
   </div>
 </div>
 </body>

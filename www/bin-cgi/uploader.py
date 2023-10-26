@@ -1,4 +1,5 @@
 import os
+import sys
 from datetime import datetime
 
 def printError(error_str):
@@ -27,6 +28,10 @@ if os.path.exists(file_path):
             last_element = elements[-1]
             file_name = last_element[1 : -2]
             # Remove the first 3 lines and the last line
+            # if file_name is empty then print error
+            if file_name == "":
+                    printError("File name is empty.")
+                    sys.exit(0)
             if len(lines) >= 4:
                 lines = lines[4:-2]
 
