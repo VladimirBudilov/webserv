@@ -1,12 +1,21 @@
 #include "webserv.hpp"
 
+using std::cout;
+using std::endl;
+using std::string;
 
 void configError() {
     std::cout << "Error, bad config file." << std::endl;
     exit(1);
 }
 
-
+std::string fileType(const std::string& path) {
+	std::string res;
+	size_t pos = path.find_last_of('.');
+	if (pos != std::string::npos)
+		res = path.substr(pos + 1);
+	return res;
+}
 
 void parseServer(std::vector<std::string> &str, std::vector<ServerConfig>& servers, int& i) {
     i++;
