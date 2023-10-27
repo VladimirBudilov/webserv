@@ -13,6 +13,7 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
             serverSocketFd = getServerSocketFd(serverSockets, currentEventSocketFd);
             clientSocketFd = getClientSocketFd(clientSockets, currentEventSocketFd);
             if (serverSocketFd != -1) {
+                std::cout << "currentEventSocketFd  = " << currentEventSocketFd <<  std::endl;
                 /// new connection with server
                 ClientSocket clientSocket(currentEventSocketFd, _kq,
                 getServerSocketBySocketFd(serverSockets, currentEventSocketFd).getConfig());

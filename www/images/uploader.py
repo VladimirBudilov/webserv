@@ -11,8 +11,7 @@ def printError(error_str):
 file_path = os.environ.get("BODY_FILE")
 file_to_upload = os.environ.get("PATH_INFO")
 file_name = "new_file"
-file_type = "jpeg"
-
+file_type = "txt"
 
 # Check if the file exists
 if os.path.exists(file_path):
@@ -61,8 +60,8 @@ if os.path.exists(file_path):
                         with open(new_file_path, "w") as new_file:
                             # Write response and 200 status in header to the new file
                             print("HTTP/1.1 200 OK\r\n")
-                            print("Content-Type: {};charset=utf-8\r\n\r\n".format(file_type))
-
+                            print("Content-Type: text/html\r\n")
+                            print("\r\n\r\n")
                             # Write the modified content to the new file
                             new_file.write(file_data)
 

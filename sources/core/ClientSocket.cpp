@@ -62,7 +62,7 @@ pathToUpload) {
     pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo;
     std::cout << "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo << std::endl;
     pathInfo = "PATH_INFO=" + DataStorage::root + "/www/" + pathToUpload;
-    std::cout << "PATH_INFO=" + DataStorage::root + "/www/" + pathToUpload << std::endl;
+    std::cout << "PATH_INFO=" + DataStorage::root + "/www" + pathToUpload << std::endl;
     pythonEnv[0] = strdup(pathInfo.c_str());
     pythonEnv[1] = strdup(pathTranslated.c_str());
     ///put all args in env
@@ -100,22 +100,47 @@ pathToUpload) {
         close(fdCGIFile);
     }
     waitpid(pid, NULL, 0);
-    std::ifstream file((DataStorage::root + "/www/" + tmpCGIFile).c_str());
+    /*std::ifstream file((DataStorage::root + "/www/" + tmpCGIFile).c_str());
     std::getline(file, Response.Body, '\0');
-    file.close();
+    file.close();*/
+    std::ifstream file((DataStorage::root + "/www/" + tmpCGIFile).c_str(), std::ios::binary);
+    if (file) {
+        // Find the length of the file
+        file.seekg(0, std::ios::end);
+        std::streampos length = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        // Resize the Response.Body to fit the entire file
+        Response.ResponseData.resize(length);
+
+        // Read the entire file into Response.Body
+        file.read(&Response.ResponseData[0], length);
+
+        file.close();
+    }
     remove((DataStorage::root + "/www/" + tmpCGIFile).c_str());
     remove((DataStorage::root + "/www/" + tmpBodyFile).c_str());
     delete[] pythonArgs;
     delete[] pythonEnv;
-    Response.ResponseData = Response.Body;
     Response.sentLength = 0;
+    std::cout << Response.ResponseData << std::endl;
 }
 
 void ClientSocket::generateResponse() {
     //std::cout << "body: " << Request.getBody() << std::endl;
 
     std::string method = Request.getMethod();
+    std::string fileToOpen;
     std::string location = Request.getPath();
+
+    ///if location has file name put it in fileToOpen and delete it from location
+    if (location.find('.') != std::string::npos && !Request.hasCGI()) {
+        ///if location last element / remove it
+        if (location[location.size() - 1] == '/')
+            location = location.substr(0, location.size() - 1);
+        fileToOpen = location.substr(location.find_last_of('/') + 1, location.size() - 1);
+        location = location.substr(0, location.find_last_of('/') + 1);
+    }
     std::string host = Request.getHeaders().find("Host")->second;
     bool isAutoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
     std::string placeToUpload;
@@ -167,9 +192,12 @@ void ClientSocket::generateResponse() {
         Response.ResponseData = Response.Status + Response.Body;
         return;
     }
-    ///create response for index
-    if (root[root.size() - 1] == '/')
+    ///create response for location by default
+    if (root[root.size() - 1] == '/' && fileToOpen.empty())
         root += currentLocation.getIndex();
+    ///create response for location with file
+    if(root[root.size() - 1] == '/' && !fileToOpen.empty())
+        root += fileToOpen;
     getFoolPath(root);
     getDataByFullPath(root, currentConfig, currentLocation, placeToUpload);
 }
