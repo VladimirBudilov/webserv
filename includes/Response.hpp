@@ -8,13 +8,18 @@ class Response {
 public:
     std::string ResponseData;
     int sentLength;
+
+    std::string NumStatus;
+    std::string ContentType;
     std::string Status;
     std::string Body;
 
-    void generateDefoultErrorPage(int code);
+    void generateDefaultErrorPage(int code);
     Response();
 
-    void getdefoultErrorPage(int code);
+    void getDefaultErrorPage(int code);
+
+    void GenerateContentType(const std::string &path);
 };
 
 

@@ -112,10 +112,6 @@ html_content = """
 
 # Print the HTTP header
 print("HTTP/1.1 200 OK")
-print("\r\n")
-
-
-
-
+print("\r\n")  # End of headers
 # Print the HTML content to the standard output
 print(html_content)

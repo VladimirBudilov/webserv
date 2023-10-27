@@ -40,37 +40,25 @@ public:
     size_t getMuchWritten() const {
         return _much_written;
     }
-
-    bool isValidRequest();
-
+    bool isValidRequest() const;
     void generateCGIResponse(const std::string &path, const Location &location, const std::string &
     pathToUpload);
-
     void generateResponse();
-
     ClientSocket(const ClientSocket &socket);
     ClientSocket &operator=(const ClientSocket &socket);
     ~ClientSocket(){};
     ///generate == operator
     bool operator==(const ClientSocket &socket) const;
-
     void getFoolPath(std::string &pathToUpdate) const;
-
     void getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location,
                            const std::string
-                           &pathToUpload);
-
+                           &pathAfterCGIScript);
     void getErrorPageData(const std::string &errorRoot);
-
     void generateErrorPage(const ServerConfig &config, int errorNumber);
-
     bool isValidMethod(const std::string &method, const Location &location);
-
     bool isCGI(std::string path);
-
     bool CanMakeResponse();
-
-    void setIsReadyToMakeResponse(bool isReadyToMakeResponse);
+    void parseRequestPath(std::string &fileToOpen, std::string &placeToUpload, std::string &location);
 };
 
 

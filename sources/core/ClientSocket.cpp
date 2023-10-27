@@ -2,18 +2,6 @@
 #include "DataStorage.hpp"
 #include <algorithm>
 
-ClientSocket::kEvent &ClientSocket::getClientInterest() {
-    return _clientInterest;
-}
-
-void ClientSocket::Read(const std::string &read) {
-    ClientSocket::_read = read;
-}
-
-void ClientSocket::MuchWritten(size_t muchWritten) {
-    _much_written = muchWritten;
-}
-
 ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs) {
     _config = configs;
     struct sockaddr_in clientAddr;
@@ -29,21 +17,15 @@ ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &
     ResponseSize = 0;
 }
 
-void ClientSocket::setClientInterest(const ClientSocket::kEvent &clientInterest) {
-    _clientInterest = clientInterest;
-}
-bool ClientSocket::isValidRequest() {
+bool ClientSocket::isValidRequest() const {
     if (Request.RequestData.empty())
         return false;
-    //Request.parse_request(Request.RequestData);
-    /*if (Request.isVersion())
-        return true;*/
-    ///TODO add correct Request validation
+    ///TODO add correct Request validation. or not))
     return true;
 }
+
 void ClientSocket::generateCGIResponse(const std::string &path, const Location &location, const std::string &
 pathToUpload) {
-    //std::cout << location.getCgiPass() << std::endl;
     const char *pythonScriptPath = path.c_str();
     const char *pythonInterpreter = location.getCgiPass().c_str();
     std::string pathInfo;
@@ -60,9 +42,7 @@ pathToUpload) {
     }
     pathInfo = path.substr(path.find(".py") + 3, path.size() - 1);
     pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo;
-    std::cout << "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo << std::endl;
     pathInfo = "PATH_INFO=" + DataStorage::root + "/www/" + pathToUpload;
-    std::cout << "PATH_INFO=" + DataStorage::root + "/www" + pathToUpload << std::endl;
     pythonEnv[0] = strdup(pathInfo.c_str());
     pythonEnv[1] = strdup(pathTranslated.c_str());
     ///put all args in env
@@ -72,8 +52,7 @@ pathToUpload) {
         pythonEnv[i] = strdup(tmp.c_str());
         i++;
     }
-    if(hasBody)
-    {
+    if (hasBody) {
         pythonEnv[i++] = strdup(("BODY_FILE=" + DataStorage::root + "/www/" + tmpBodyFile).c_str());
         std::cout << "BODY_FILE=" + DataStorage::root + "/www/" + tmpBodyFile << std::endl;
     }
@@ -84,7 +63,7 @@ pathToUpload) {
     pythonArgs[1] = strdup(pythonScriptPath);
     pythonArgs[2] = NULL;
     std::string tmpCGIFile = "CGI" + std::to_string(_socket);
-    int fdCGIFile = open(( DataStorage::root + "/www/" + tmpCGIFile).c_str(), O_RDWR | O_CREAT, 0666);
+    int fdCGIFile = open((DataStorage::root + "/www/" + tmpCGIFile).c_str(), O_RDWR | O_CREAT, 0666);
     std::cout << DataStorage::root + "/www/" + tmpCGIFile << std::endl;
     if (fdCGIFile == -1) {
         perror("Ошибка при открытии файла");
@@ -100,22 +79,13 @@ pathToUpload) {
         close(fdCGIFile);
     }
     waitpid(pid, NULL, 0);
-    /*std::ifstream file((DataStorage::root + "/www/" + tmpCGIFile).c_str());
-    std::getline(file, Response.Body, '\0');
-    file.close();*/
     std::ifstream file((DataStorage::root + "/www/" + tmpCGIFile).c_str(), std::ios::binary);
     if (file) {
-        // Find the length of the file
         file.seekg(0, std::ios::end);
         std::streampos length = file.tellg();
         file.seekg(0, std::ios::beg);
-
-        // Resize the Response.Body to fit the entire file
         Response.ResponseData.resize(length);
-
-        // Read the entire file into Response.Body
         file.read(&Response.ResponseData[0], length);
-
         file.close();
     }
     remove((DataStorage::root + "/www/" + tmpCGIFile).c_str());
@@ -123,36 +93,15 @@ pathToUpload) {
     delete[] pythonArgs;
     delete[] pythonEnv;
     Response.sentLength = 0;
-    std::cout << Response.ResponseData << std::endl;
 }
 
 void ClientSocket::generateResponse() {
-    //std::cout << "body: " << Request.getBody() << std::endl;
-
     std::string method = Request.getMethod();
     std::string fileToOpen;
+    std::string pathAfterCGIScript;
     std::string location = Request.getPath();
-    std::string placeToUpload;
-
-    ///if location has file name put it in fileToOpen and delete it from location
-    if (location.find('.') != std::string::npos) {
-        ///if location last element / remove it
-        if(!Request.hasCGI())
-        {
-            if (location[location.size() - 1] == '/' && location.size() > 1)
-                location = location.substr(0, location.size() - 1);
-            fileToOpen = location.substr(location.find_last_of('/') + 1, location.size() - 1);
-            location = location.substr(0, location.find_last_of('/'));
-            if(location.empty())
-                location = "/";
-        } else
-        {
-            placeToUpload = location.substr(location.find(".py") + 3, location.size() - 1);
-            location = location.substr(0, location.find(".py") + 3);
-            fileToOpen = location.substr(location.find_last_of('/') + 1, location.size() - 1);
-            location = location.substr(0, location.find_last_of('/'));
-        }
-    }
+    /// split request path to file and place to upload
+    parseRequestPath(fileToOpen, pathAfterCGIScript, location);
     std::string host = Request.getHeaders().find("Host")->second;
     bool isAutoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
     ServerConfig currentConfig;
@@ -180,6 +129,7 @@ void ClientSocket::generateResponse() {
             break;
         }
     }
+
     if (root.empty() && !isAutoindex) {
         std::cout << "empty root" << std::endl;
         generateErrorPage(currentConfig, 404);
@@ -191,12 +141,41 @@ void ClientSocket::generateResponse() {
         generateErrorPage(currentConfig, 405);
         return;
     }
+    ///check body size
+/*    if (Request.getHeaders().find("Content-Length") != Request.getHeaders().end()) {
+        if (Request.getBody().size() > (size_t) std::stoi(Request.getHeaders().find("Content-Length")->second)) {
+            std::cout << "invalid body size" << std::endl;
+            generateErrorPage(currentConfig, 413);
+            return;
+        }
+    }*/
+    /// check HTTP version
+    if (!Request.isVersion() && !isAutoindex) {
+        std::cout << "invalid HTTP version" << std::endl;
+        generateErrorPage(currentConfig, 505);
+        return;
+    }
     ///create response for isAutoindex
     if (currentLocation.isAutoindex() || isAutoindex) {
         std::cout << "isAutoindex" << std::endl;
         std::string autoindexLocation = Request.getArgs().find("path")->second + Request.getPath();
         std::string html = generate_autoindex(DataStorage::root + "/www", autoindexLocation);
         Response.Body = html;
+        if(autoindexLocation.find('.') == std::string::npos)
+            Response.GenerateContentType("костыль.html"); ///TODO: do not fix it)))
+        else
+            Response.GenerateContentType(autoindexLocation);
+        Response.ResponseData = Response.Status + Response.Body;
+        return;
+    }
+    if (Request.getMethod() == "DELETE") {
+        std::cout << "DELETE" << std::endl;
+        if (remove((root + location).c_str()) == -1) {
+            std::cout << "delete error" << std::endl;
+            generateErrorPage(currentConfig, 404);
+            return;
+        }
+        Response.GenerateContentType("text/html");
         Response.ResponseData = Response.Status + Response.Body;
         return;
     }
@@ -204,10 +183,31 @@ void ClientSocket::generateResponse() {
     if (root[root.size() - 1] == '/' && fileToOpen.empty())
         root += currentLocation.getIndex();
     ///create response for location with file
-    if(root[root.size() - 1] == '/' && !fileToOpen.empty())
+    if (root[root.size() - 1] == '/' && !fileToOpen.empty())
         root += fileToOpen;
     getFoolPath(root);
-    getDataByFullPath(root, currentConfig, currentLocation, placeToUpload);
+    getDataByFullPath(root, currentConfig, currentLocation, pathAfterCGIScript);
+}
+
+void ClientSocket::parseRequestPath(std::string &fileToOpen, std::string &placeToUpload,
+                                    std::string &location) {
+    ///if location has file name put it in fileToOpen and delete it from location
+    if (location.find('.') != std::string::npos) {
+        ///if location last element / remove it
+        if (!Request.hasCGI()) {
+            if (location[location.size() - 1] == '/' && location.size() > 1)
+                location = location.substr(0, location.size() - 1);
+            fileToOpen = location.substr(location.find_last_of('/') + 1, location.size() - 1);
+            location = location.substr(0, location.find_last_of('/'));
+            if (location.empty())
+                location = "/";
+        } else {
+            placeToUpload = location.substr(location.find(".py") + 3, location.size() - 1);
+            location = location.substr(0, location.find(".py") + 3);
+            fileToOpen = location.substr(location.find_last_of('/') + 1, location.size() - 1);
+            location = location.substr(0, location.find_last_of('/'));
+        }
+    }
 }
 
 std::string
@@ -217,9 +217,9 @@ ClientSocket::generate_autoindex(const std::string &rootPath, const std::string 
     struct stat filestat;
     std::stringstream html;
     std::string path = rootPath + location;
-    html << "<html><body><ul>";
 
     if ((dir = opendir(path.c_str())) != NULL) {
+        html << "<html><body><ul>";
         while ((ent = readdir(dir)) != NULL) {
             std::string filepath = path + "/" + ent->d_name;
             stat(filepath.c_str(), &filestat);
@@ -236,6 +236,7 @@ ClientSocket::generate_autoindex(const std::string &rootPath, const std::string 
                      << "modified: " << mod_time << ")</li>";
             }
         }
+        html << "</ul></body></html>";
         closedir(dir);
     } else {
         std::fstream file(path.c_str());
@@ -246,34 +247,40 @@ ClientSocket::generate_autoindex(const std::string &rootPath, const std::string 
         else {
             file >> html.rdbuf();
             file.close();
-            Response.Status = "HTTP/1.1 200 OK\n"
-                              "Content-Type: image/jpeg\n\n";
+            ///TODO generate error page
         }
     }
-    html << "</ul></body></html>";
+
     return html.str();
 }
 
 void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location,
                                      const std::string
-                                     &pathToUpload) {
-    std::ifstream file(path.c_str());
-    std::string str;
+                                     &pathAfterCGIScript) {
     std::string response;
     ///handle cgi(.py scripts)
     if (isCGI(path)) {
         std::cout << "CGI" << std::endl;
-        generateCGIResponse(path, location, pathToUpload);
+        generateCGIResponse(path, location, pathAfterCGIScript);
         return;
     }
-        ///handle static file
-    else if (file.is_open()) {
-        while (std::getline(file, str, '\0')) {
-            response += str + "\n";
-        }
+    ///handle static files
+    std::ifstream file(path.c_str(), std::ios::binary);
+    if (file) {
+        // Find the length of the file
+        file.seekg(0, std::ios::end);
+        std::streampos length = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        // Resize the Response.Body to fit the entire file
+        response.resize(length);
+
+        // Read the entire file into Response.Body
+        file.read(&response[0], length);
+
         file.close();
         Response.Body = response;
-        
+        Response.GenerateContentType(path);
         Response.ResponseData = Response.Status + Response.Body;
         Response.sentLength = 0;
     }
@@ -284,13 +291,15 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
     }
 }
 
-void ClientSocket::generateErrorPage(const ServerConfig &config, int errorNumber) {
+void ClientSocket::generateErrorPage(const ServerConfig &config, int errorNumber)
+{
     std::__1::map<short, std::string> errors = config.getErrorPages();
-    std::__1::map<short, std::string>::iterator it = errors.find(errorNumber);
-    Response.generateDefoultErrorPage(errorNumber);
-    std::string errorRoot = it->second;
-    getFoolPath(errorRoot);
-    getErrorPageData(errorRoot);
+    std::string errorRoot = errors[errorNumber];
+    Response.generateDefaultErrorPage(errorNumber);
+    if (!errorRoot.empty()) {
+        getFoolPath(errorRoot);
+        getErrorPageData(errorRoot);
+    }
 }
 
 void ClientSocket::getFoolPath(std::string &pathToUpdate) const {
@@ -370,21 +379,22 @@ bool ClientSocket::CanMakeResponse() {
     if (Request.getMethod() != "GET" && Request.getMethod() != "POST" &&
         Request.RequestData.find("\r\n\r\n") != std::string::npos) {
         Request.parse_request(Request.RequestData);
-        if(Request.getMethod() == "GET") {
+        if (Request.getMethod() == "GET") {
             std::cout << "GET request recived" << std::endl;
             _isReadyToMakeResponse = true;
         }
     }
     ///update data of body size in request
-    if(Request.getMethod() == "POST")
+    if (Request.getMethod() == "POST")
         Request.parse_request(Request.RequestData);
     std::cout << "content size " << Request.getHeaders().find("Content-Length")->second << std::endl;
     std::cout << "Body size " << Request.getBody().size() << std::endl;
     ///check that request method is post and request is complete
-    if (Request.getMethod() == "POST" && std::atoi((Request.getHeaders().find("Content-Length")->second).c_str()) == (int)Request.getBody().size()) {
+    if (Request.getMethod() == "POST" &&
+        std::atoi((Request.getHeaders().find("Content-Length")->second).c_str()) == (int) Request.getBody().size()) {
         std::cout << "POST request recived" << std::endl;
-        std::cout<< "content size " << Request.getHeaders().find("Content-Length")->second << std::endl;
-        std::cout<< "Body size " << Request.getBody().size() << std::endl;
+        std::cout << "content size " << Request.getHeaders().find("Content-Length")->second << std::endl;
+        std::cout << "Body size " << Request.getBody().size() << std::endl;
         _isReadyToMakeResponse = true;
     }
     return _isReadyToMakeResponse;
