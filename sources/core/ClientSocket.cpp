@@ -132,18 +132,29 @@ void ClientSocket::generateResponse() {
     std::string method = Request.getMethod();
     std::string fileToOpen;
     std::string location = Request.getPath();
+    std::string placeToUpload;
 
     ///if location has file name put it in fileToOpen and delete it from location
-    if (location.find('.') != std::string::npos && !Request.hasCGI()) {
+    if (location.find('.') != std::string::npos) {
         ///if location last element / remove it
-        if (location[location.size() - 1] == '/')
-            location = location.substr(0, location.size() - 1);
-        fileToOpen = location.substr(location.find_last_of('/') + 1, location.size() - 1);
-        location = location.substr(0, location.find_last_of('/') + 1);
+        if(!Request.hasCGI())
+        {
+            if (location[location.size() - 1] == '/' && location.size() > 1)
+                location = location.substr(0, location.size() - 1);
+            fileToOpen = location.substr(location.find_last_of('/') + 1, location.size() - 1);
+            location = location.substr(0, location.find_last_of('/'));
+            if(location.empty())
+                location = "/";
+        } else
+        {
+            placeToUpload = location.substr(location.find(".py") + 3, location.size() - 1);
+            location = location.substr(0, location.find(".py") + 3);
+            fileToOpen = location.substr(location.find_last_of('/') + 1, location.size() - 1);
+            location = location.substr(0, location.find_last_of('/'));
+        }
     }
     std::string host = Request.getHeaders().find("Host")->second;
     bool isAutoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
-    std::string placeToUpload;
     ServerConfig currentConfig;
     Location currentLocation;
     std::string root;
@@ -151,10 +162,7 @@ void ClientSocket::generateResponse() {
     currentConfig = _config[0];
     std::vector<Location> locations = _config[0].getLocations();
     ///if request is CGI store all data from location after .py in another string
-    if (location.find(".py") != std::string::npos) {
-        placeToUpload = location.substr(location.find(".py") + 3, location.size() - 1);
-        location = location.substr(0, location.find(".py") + 3);
-    }
+
     ///get config by host another will be default
     std::string configHost;
     for (size_t i = 0; i < _config.size(); i++) {
@@ -260,11 +268,12 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
     }
         ///handle static file
     else if (file.is_open()) {
-        while (std::getline(file, str)) {
+        while (std::getline(file, str, '\0')) {
             response += str + "\n";
         }
         file.close();
         Response.Body = response;
+        
         Response.ResponseData = Response.Status + Response.Body;
         Response.sentLength = 0;
     }
