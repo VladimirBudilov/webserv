@@ -10,46 +10,43 @@ Response::Response() {
 
 void Response::generateDefaultErrorPage(int code) {
     if (code == 404) {
-        GenerateStatus("HTTP/1.1 404 Not Found\n", "text/html\n\n");
+        GenerateErrorStatus("HTTP/1.1 404 Not Found\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 405) {
-        GenerateStatus("HTTP/1.1 405 Method Not Allowed\n", "text/html\n\n");
+        GenerateErrorStatus("HTTP/1.1 405 Method Not Allowed\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 413) {
-        GenerateStatus("HTTP/1.1 413 Payload Too Large\n", "text/html\n\n");
+        GenerateErrorStatus("HTTP/1.1 413 Payload Too Large\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 500) {
-        GenerateStatus("HTTP/1.1 500 Internal Server Error\n", "text/html\n\n");
+        GenerateErrorStatus("HTTP/1.1 500 Internal Server Error\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 501) {
-        GenerateStatus("HTTP/1.1 501 Not Implemented\n", "text/html\n\n");
+        GenerateErrorStatus("HTTP/1.1 501 Not Implemented\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 505) {
-        GenerateStatus("HTTP/1.1 505 HTTP Version Not Supported\n", "text/html\n\n");
+        GenerateErrorStatus("HTTP/1.1 505 HTTP Version Not Supported\n", "text/html\n\n");
         getDefaultErrorPage(code);
     }
 
 }
 
-void Response::GenerateStatus(std::string contType, std::string numStatus) {
-    ContentType = contType;
-    NumStatus += numStatus;
+void Response::GenerateErrorStatus(std::string numStatus, std::string contType) {
+    NumStatus = numStatus;
+    ContentType += contType;
+    Status = NumStatus + ContentType;
 }
 
 void Response::getDefaultErrorPage(int code) {
     std::string errorRoot = DataStorage::defaultErrorPages[code];
     std::ifstream file(errorRoot.c_str());
-    std::string str;
     std::string response;
     if (file.is_open()) {
-        while (std::getline(file, str)) {
-            response += str + "\n";
-        }
+        getline(file, response, '\0');
         file.close();
     }
     Body = response;
     ResponseData = Status + Body;
-
 }
 
 void Response::GenerateContentType(const std::string& path) {

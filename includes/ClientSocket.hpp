@@ -25,7 +25,7 @@ public:
     Response Response;
     ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs);
 
-	std::string generate_autoindex(const std::string &rootPath, const std::string &location);
+	std::string generateAutoindexPage(const std::string &rootPath, const std::string &location);
 
     void setClientInterest(const kEvent &clientInterest);
     kEvent &getClientInterest();
@@ -65,8 +65,10 @@ public:
 
     void chooseConfig(const std::string &host, ServerConfig &currentConfig, std::vector<Location> &locations);
 
-    bool idValidRequest(const ServerConfig &currentConfig, const Location &currentLocation, const std::string &method,
+    bool isValidRequest(const ServerConfig &currentConfig, const Location &currentLocation, const std::string &method,
                         const std::string &root, bool isAutoindex);
+
+    void generateAutoindexResponse();
 };
 
 

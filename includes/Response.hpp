@@ -21,7 +21,7 @@ public:
 
     void GenerateContentType(const std::string &path);
 
-    void GenerateStatus(std::string contType, std::string numStatus);
+    void GenerateErrorStatus(std::string numStatus, std::string contType);
 };
 
 

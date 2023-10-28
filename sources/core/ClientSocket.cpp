@@ -115,20 +115,11 @@ void ClientSocket::generateResponse() {
     ///go through first config and find location
     root = rootParsing(location, locations, currentLocation);
     ///Validate request
-
-    if(!idValidRequest(currentConfig, currentLocation, method, root, isAutoindex))
+    if(!isValidRequest(currentConfig, currentLocation, method, root, isAutoindex))
         return;
     ///create response for isAutoindex
     if (currentLocation.isAutoindex() || isAutoindex) {
-        std::cout << "isAutoindex" << std::endl;
-        std::string autoindexLocation = Request.getArgs().find("path")->second + Request.getPath();
-        std::string html = generate_autoindex(DataStorage::root + "/www", autoindexLocation);
-        Response.Body = html;
-        if(autoindexLocation.find('.') == std::string::npos)
-            Response.GenerateContentType("костыль.html"); ///TODO: do not fix it)))
-        else
-            Response.GenerateContentType(autoindexLocation);
-        Response.ResponseData = Response.Status + Response.Body;
+        generateAutoindexResponse();
         return;
     }
     ///create response for DELETE request
@@ -153,7 +144,19 @@ void ClientSocket::generateResponse() {
     getDataByFullPath(root, currentConfig, currentLocation, pathAfterCGIScript);
 }
 
-bool ClientSocket::idValidRequest(const ServerConfig &currentConfig, const Location &currentLocation, const std::string &method,
+void ClientSocket::generateAutoindexResponse() {
+    std::cout << "isAutoindex" << std::endl;
+    std::string autoindexLocation = Request.getArgs().find("path")->second + Request.getPath();
+    std::string html = generateAutoindexPage(DataStorage::root + "/www", autoindexLocation);
+    Response.Body = html;
+    if(autoindexLocation.find('.') == std::string::npos)
+        Response.GenerateContentType("костыль.html"); ///TODO: do not fix it)))
+    else
+        Response.GenerateContentType(autoindexLocation);
+    Response.ResponseData = Response.Status + Response.Body;
+}
+
+bool ClientSocket::isValidRequest(const ServerConfig &currentConfig, const Location &currentLocation, const std::string &method,
                                   const std::string &root, bool isAutoindex) {
     bool isValidRequest = true;
     if (root.empty() && !isAutoindex) {
@@ -162,14 +165,14 @@ bool ClientSocket::idValidRequest(const ServerConfig &currentConfig, const Locat
         isValidRequest = false;
     }
     ///check method
-    if (!isValidMethod(method, currentLocation) && !isAutoindex) {
+    else if (!isValidMethod(method, currentLocation) && !isAutoindex) {
         std::cout << "invalid method" << std::endl;
         generateErrorPage(currentConfig, 405);
         isValidRequest = false;
 
     }
     ///check body size
-    if (Request.getHeaders().find("Content-Length") != Request.getHeaders().end()) {
+    else if (Request.getHeaders().find("Content-Length") != Request.getHeaders().end()) {
         if(currentLocation.getMaxBodySize() != -1 && currentLocation.getMaxBodySize() != -1){
             if (Request.getBody().size() > (size_t)currentLocation.getMaxBodySize()
                 || Request.getBody().size() > currentConfig.getMaxBodySize()) {
@@ -180,11 +183,10 @@ bool ClientSocket::idValidRequest(const ServerConfig &currentConfig, const Locat
         }
     }
     /// check HTTP version
-    if (!Request.isVersion() && !isAutoindex) {
+    else if (!Request.isVersion() && !isAutoindex) {
         std::cout << "invalid HTTP version" << std::endl;
         generateErrorPage(currentConfig, 505);
         isValidRequest = false;
-
     }
     return isValidRequest;
 }
@@ -235,7 +237,7 @@ void ClientSocket::parseRequestPath(std::string &fileToOpen, std::string &placeT
 }
 
 std::string
-ClientSocket::generate_autoindex(const std::string &rootPath, const std::string &location) {
+ClientSocket::generateAutoindexPage(const std::string &rootPath, const std::string &location) {
     DIR *dir;
     struct dirent *ent;
     struct stat filestat;
@@ -271,10 +273,8 @@ ClientSocket::generate_autoindex(const std::string &rootPath, const std::string 
         else {
             file >> html.rdbuf();
             file.close();
-            ///TODO generate error page
         }
     }
-
     return html.str();
 }
 
@@ -313,8 +313,8 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
 
 void ClientSocket::generateErrorPage(const ServerConfig &config, int errorNumber)
 {
-    std::__1::map<short, std::string> errors = config.getErrorPages();
-    std::string errorRoot = errors[errorNumber];
+    std::map<short, std::string> errors = config.getErrorPages();
+    std::string errorRoot = errors[(short)errorNumber];
     Response.generateDefaultErrorPage(errorNumber);
     if (!errorRoot.empty()) {
         getFoolPath(errorRoot);
@@ -359,19 +359,15 @@ void ClientSocket::getErrorPageData(const std::string &errorRoot) {
     std::string str;
     std::string response;
     if (file.is_open()) {
-        while (std::getline(file, str)) {
-            response += str + "\n";
-        }
+        std::getline(file, response, '\0');
         file.close();
     } else {
-        //generate error page
         std::cout << "error page" << std::endl;
         Response.ResponseData = Response.Status + Response.Body;
         return;
     }
     Response.Body = response;
     Response.ResponseData = Response.Status + Response.Body;
-    Response.sentLength = 0;
 }
 
 bool ClientSocket::isValidMethod(const std::string &method, const Location &location) {
