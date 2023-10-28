@@ -8,7 +8,7 @@ Location::Location() {
 	_autoindex = false;
 	_file_upload = false;
 	_methods = std::vector<bool>(3, false);
-	_max_body_size = 1024;
+	_max_body_size = -1;
 }
 
 void Location::setPath(const std::string &path) {
@@ -162,6 +162,6 @@ const std::vector<bool> &Location::getMethods() const {
 	return _methods;
 }
 
-unsigned long long int Location::getMaxBodySize() const {
+long long int Location::getMaxBodySize() const {
 	return _max_body_size;
 }

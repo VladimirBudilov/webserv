@@ -13,7 +13,7 @@ private:
 	bool _autoindex;
 	bool _file_upload;
 	std::vector<bool> _methods;
-	unsigned long long _max_body_size;
+	long long int _max_body_size;
 public:
 	Location();
 
@@ -25,7 +25,7 @@ public:
 	bool isAutoindex() const;
 	bool isFileUpload() const;
 	const std::vector<bool> &getMethods() const;
-	unsigned long long int getMaxBodySize() const;
+	long long int getMaxBodySize() const;
 
 	void root(std::stringstream &ss);
 	void index(std::stringstream &ss);

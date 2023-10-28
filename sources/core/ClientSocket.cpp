@@ -41,8 +41,8 @@ pathToUpload) {
         file.close();
     }
     pathInfo = path.substr(path.find(".py") + 3, path.size() - 1);
+    pathInfo = "PATH_INFO=" + DataStorage::root + "/www" + pathToUpload;
     pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo;
-    pathInfo = "PATH_INFO=" + DataStorage::root + "/www/" + pathToUpload;
     pythonEnv[0] = strdup(pathInfo.c_str());
     pythonEnv[1] = strdup(pathTranslated.c_str());
     ///put all args in env
@@ -96,65 +96,28 @@ pathToUpload) {
 }
 
 void ClientSocket::generateResponse() {
+    ServerConfig currentConfig;
+    Location currentLocation;
     std::string method = Request.getMethod();
-    std::string fileToOpen;
+    std::string location = Request.getPath();std::string fileToOpen;
     std::string pathAfterCGIScript;
-    std::string location = Request.getPath();
-    /// split request path to file and place to upload
+    std::string root;
+
+    /// split request path to file and place to path after cgi
     parseRequestPath(fileToOpen, pathAfterCGIScript, location);
     std::string host = Request.getHeaders().find("Host")->second;
     bool isAutoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
-    ServerConfig currentConfig;
-    Location currentLocation;
-    std::string root;
     host = host.substr(0, host.find(':'));
     currentConfig = _config[0];
     std::vector<Location> locations = _config[0].getLocations();
-    ///if request is CGI store all data from location after .py in another string
-
     ///get config by host another will be default
-    std::string configHost;
-    for (size_t i = 0; i < _config.size(); i++) {
-        if (_config[i].getHost() == host) {
-            currentConfig = _config[i];
-            locations = _config[i].getLocations();
-            break;
-        }
-    }
+    chooseConfig(host, currentConfig, locations);
     ///go through first config and find location
-    for (size_t j = 0; j < locations.size(); j++) {
-        if (locations[j].getPath() == location) {
-            root = locations[j].getRoot();
-            currentLocation = locations[j];
-            break;
-        }
-    }
+    root = rootParsing(location, locations, currentLocation);
+    ///Validate request
 
-    if (root.empty() && !isAutoindex) {
-        std::cout << "empty root" << std::endl;
-        generateErrorPage(currentConfig, 404);
+    if(!idValidRequest(currentConfig, currentLocation, method, root, isAutoindex))
         return;
-    }
-    ///check method
-    if (!isValidMethod(method, currentLocation) && !isAutoindex) {
-        std::cout << "invalid method" << std::endl;
-        generateErrorPage(currentConfig, 405);
-        return;
-    }
-    ///check body size
-/*    if (Request.getHeaders().find("Content-Length") != Request.getHeaders().end()) {
-        if (Request.getBody().size() > (size_t) std::stoi(Request.getHeaders().find("Content-Length")->second)) {
-            std::cout << "invalid body size" << std::endl;
-            generateErrorPage(currentConfig, 413);
-            return;
-        }
-    }*/
-    /// check HTTP version
-    if (!Request.isVersion() && !isAutoindex) {
-        std::cout << "invalid HTTP version" << std::endl;
-        generateErrorPage(currentConfig, 505);
-        return;
-    }
     ///create response for isAutoindex
     if (currentLocation.isAutoindex() || isAutoindex) {
         std::cout << "isAutoindex" << std::endl;
@@ -168,6 +131,7 @@ void ClientSocket::generateResponse() {
         Response.ResponseData = Response.Status + Response.Body;
         return;
     }
+    ///create response for DELETE request
     if (Request.getMethod() == "DELETE") {
         std::cout << "DELETE" << std::endl;
         if (remove((root + location).c_str()) == -1) {
@@ -175,18 +139,78 @@ void ClientSocket::generateResponse() {
             generateErrorPage(currentConfig, 404);
             return;
         }
-        Response.GenerateContentType("text/html");
+        Response.GenerateContentType("text.html");
         Response.ResponseData = Response.Status + Response.Body;
         return;
     }
-    ///create response for location by default
+    ///adjust path to file for location by default
     if (root[root.size() - 1] == '/' && fileToOpen.empty())
         root += currentLocation.getIndex();
-    ///create response for location with file
+    ///adjust path to file for location with file
     if (root[root.size() - 1] == '/' && !fileToOpen.empty())
         root += fileToOpen;
     getFoolPath(root);
     getDataByFullPath(root, currentConfig, currentLocation, pathAfterCGIScript);
+}
+
+bool ClientSocket::idValidRequest(const ServerConfig &currentConfig, const Location &currentLocation, const std::string &method,
+                                  const std::string &root, bool isAutoindex) {
+    bool isValidRequest = true;
+    if (root.empty() && !isAutoindex) {
+        std::cout << "empty root" << std::endl;
+        generateErrorPage(currentConfig, 404);
+        isValidRequest = false;
+    }
+    ///check method
+    if (!isValidMethod(method, currentLocation) && !isAutoindex) {
+        std::cout << "invalid method" << std::endl;
+        generateErrorPage(currentConfig, 405);
+        isValidRequest = false;
+
+    }
+    ///check body size
+    if (Request.getHeaders().find("Content-Length") != Request.getHeaders().end()) {
+        if(currentLocation.getMaxBodySize() != -1 && currentLocation.getMaxBodySize() != -1){
+            if (Request.getBody().size() > (size_t)currentLocation.getMaxBodySize()
+                || Request.getBody().size() > currentConfig.getMaxBodySize()) {
+                std::cout << "invalid body size" << std::endl;
+                generateErrorPage(currentConfig, 413);
+                isValidRequest = false;
+            }
+        }
+    }
+    /// check HTTP version
+    if (!Request.isVersion() && !isAutoindex) {
+        std::cout << "invalid HTTP version" << std::endl;
+        generateErrorPage(currentConfig, 505);
+        isValidRequest = false;
+
+    }
+    return isValidRequest;
+}
+
+void
+ClientSocket::chooseConfig(const std::string &host, ServerConfig &currentConfig, std::vector<Location> &locations) {
+    for (size_t i = 0; i < _config.size(); i++) {
+        if (_config[i].getHost() == host) {
+            currentConfig = _config[i];
+            locations = _config[i].getLocations();
+            break;
+        }
+    }
+}
+
+std::string ClientSocket::rootParsing(const std::string &location, const std::vector<Location> &locations,
+                                      Location &currentLocation) const {
+    std::string root;
+    for (size_t j = 0; j < locations.size(); j++) {
+        if (locations[j].getPath() == location) {
+            root = locations[j].getRoot();
+            currentLocation = locations[j];
+            break;
+        }
+    }
+    return root;
 }
 
 void ClientSocket::parseRequestPath(std::string &fileToOpen, std::string &placeToUpload,
@@ -271,18 +295,14 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
         file.seekg(0, std::ios::end);
         std::streampos length = file.tellg();
         file.seekg(0, std::ios::beg);
-
         // Resize the Response.Body to fit the entire file
         response.resize(length);
-
         // Read the entire file into Response.Body
         file.read(&response[0], length);
-
         file.close();
         Response.Body = response;
         Response.GenerateContentType(path);
         Response.ResponseData = Response.Status + Response.Body;
-        Response.sentLength = 0;
     }
         ///handle error page
     else {

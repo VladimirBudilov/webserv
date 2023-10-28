@@ -10,31 +10,30 @@ Response::Response() {
 
 void Response::generateDefaultErrorPage(int code) {
     if (code == 404) {
-        Status = "HTTP/1.1 404 Not Found\n"
-                 "Content-Type: text/html\n\n";
+        GenerateStatus("HTTP/1.1 404 Not Found\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 405) {
-        Status = "HTTP/1.1 405 Method Not Allowed\n"
-                 "Content-Type: text/html\n\n";
+        GenerateStatus("HTTP/1.1 405 Method Not Allowed\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 413) {
-        Status = "HTTP/1.1 413 Payload Too Large\n"
-                 "Content-Type: text/html\n\n";
+        GenerateStatus("HTTP/1.1 413 Payload Too Large\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 500) {
-        Status = "HTTP/1.1 500 Internal Server Error\n"
-                 "Content-Type: text/html\n\n";
+        GenerateStatus("HTTP/1.1 500 Internal Server Error\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 501) {
-        Status = "HTTP/1.1 501 Not Implemented\n"
-                 "Content-Type: text/html\n\n";
+        GenerateStatus("HTTP/1.1 501 Not Implemented\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 505) {
-        Status = "HTTP/1.1 505 HTTP Version Not Supported\n"
-                 "Content-Type: text/html\n\n";
+        GenerateStatus("HTTP/1.1 505 HTTP Version Not Supported\n", "text/html\n\n");
         getDefaultErrorPage(code);
     }
 
+}
+
+void Response::GenerateStatus(std::string contType, std::string numStatus) {
+    ContentType = contType;
+    NumStatus += numStatus;
 }
 
 void Response::getDefaultErrorPage(int code) {
@@ -60,5 +59,6 @@ void Response::GenerateContentType(const std::string& path) {
         res = path.substr(pos + 1);
     else
         res = "txt";
-    Status += NumStatus + ContentType + DataStorage::mimeTypes[res] + "\n\n";
+    ContentType += DataStorage::mimeTypes[res] + "\n\n";
+    Status += NumStatus +ContentType;
 }

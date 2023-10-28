@@ -12,7 +12,7 @@ private:
 	std::string _server_name;
 	std::map<short, std::string> _error_pages;
 	std::vector<Location> _locations;
-	unsigned long long _max_body_size;
+	long long _max_body_size;
 public:
 	ServerConfig();
 

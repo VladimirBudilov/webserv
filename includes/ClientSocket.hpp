@@ -59,6 +59,14 @@ public:
     bool isCGI(std::string path);
     bool CanMakeResponse();
     void parseRequestPath(std::string &fileToOpen, std::string &placeToUpload, std::string &location);
+
+    std::string rootParsing(const std::string &location, const std::vector<Location> &locations,
+                            Location &currentLocation) const;
+
+    void chooseConfig(const std::string &host, ServerConfig &currentConfig, std::vector<Location> &locations);
+
+    bool idValidRequest(const ServerConfig &currentConfig, const Location &currentLocation, const std::string &method,
+                        const std::string &root, bool isAutoindex);
 };
 
 

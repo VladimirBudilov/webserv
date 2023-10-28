@@ -4,7 +4,7 @@ from datetime import datetime
 
 def printError(error_str):
     print "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/html;charset=utf-8\r\n\r\n",
-    print "<H1>" + error_str + " doesn't set" + "</H1>"
+    print "<H1>" + error_str + "</H1>"
 
 
 # Get the file path
@@ -60,8 +60,7 @@ if os.path.exists(file_path):
                         # Create and open the new file for writing
                         with open(new_file_path, "w") as new_file:
                             # Write response and 200 status in header to the new file
-                            print("HTTP/1.1 200 OK\r\n")
-                            print("Content-Type: {};charset=utf-8\r\n\r\n".format(file_type))
+                            print("HTTP/1.1 200 OK\r\n\r\n")
 
                             # Write the modified content to the new file
                             new_file.write(file_data)

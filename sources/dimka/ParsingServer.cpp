@@ -5,7 +5,7 @@ ServerConfig::ServerConfig() {
 	this->_server_name = "localhost";
 	this->_host = "error";
 	this->_error_pages = std::map<short, std::string>();
-	this->_max_body_size = 1024;
+	this->_max_body_size = -1;
 	this->_locations = std::vector<Location>();
 }
 

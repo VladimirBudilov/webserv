@@ -1,8 +1,12 @@
 import os
+import sys
 
 # Define the calculate function first
 def calculate(v1, v2, op):
     result = None
+
+    if not isinstance(v1, int) or not isinstance(v2, int):
+        return "v1 and v2 must be integers."
 
     if op == "%2B":
         result = v1 + v2
@@ -21,15 +25,17 @@ def calculate(v1, v2, op):
     return result
 
 # Get the values of environment variables as integers
-v1 = int(os.environ.get("v1", 1))
-v2 = int(os.environ.get("v2", 1))
+try:
+    v1 = int(os.environ.get("v1", 1))
+    v2 = int(os.environ.get("v2", 1))
+except ValueError:
+    v1 = 1
+    v2 = 1
+
 operator = os.environ.get("operator", "+")  # Get the operator from the environment variable
 res = calculate(v1, v2, operator)  # Perform the calculation
 
 #sand data about v1 and v2 and operator to server
-
-# Generate the HTML page
-# ...
 
 # Generate the HTML page
 html_content = """
