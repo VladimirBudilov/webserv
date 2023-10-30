@@ -10,10 +10,13 @@ private:
 	std::string _root;
 	std::string _index;
 	std::string _cgi_pass;
+	std::string _redirect_path;
+	bool _redirect;
 	bool _autoindex;
 	bool _file_upload;
 	std::vector<bool> _methods;
 	unsigned long long _max_body_size;
+
 public:
 	Location();
 
@@ -34,6 +37,7 @@ public:
 	void file_upload(std::stringstream &ss);
 	void methods(std::stringstream &ss);
 	void max_body_size(std::stringstream &ss);
+	void redirect(std::stringstream &ss);
 
 };
 

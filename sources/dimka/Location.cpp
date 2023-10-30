@@ -83,6 +83,18 @@ void Location::file_upload(std::stringstream &ss)
 		configError();
 }
 
+void Location::redirect(std::stringstream &ss) {
+	std::string word;
+	ss >> word;
+	if (word[word.size() - 1] != ';')
+		configError();
+	word.erase(word.size() - 1);
+	if (!ss.eof())
+		configError();
+	this->_redirect_path = word;
+	this->_redirect = true;
+}
+
 void Location::autoindex(std::stringstream &ss)
 {
 	std::string word;
