@@ -10,6 +10,8 @@ private:
 	std::string _root;
 	std::string _index;
 	std::string _cgi_pass;
+	std::string _redirect_path;
+	bool _redirect;
 	bool _autoindex;
 	bool _file_upload;
 	std::vector<bool> _methods;
@@ -17,12 +19,15 @@ private:
 public:
 	Location();
 
-	void setPath(const std::string &path);
+    const std::string &getRedirectPath() const;
+
+    void setPath(const std::string &path);
 	const std::string &getPath() const;
 	const std::string &getRoot() const;
 	const std::string &getIndex() const;
 	const std::string &getCgiPass() const;
 	bool isAutoindex() const;
+    bool isRedirect() const;
 	bool isFileUpload() const;
 	const std::vector<bool> &getMethods() const;
 	long long int getMaxBodySize() const;
@@ -34,6 +39,7 @@ public:
 	void file_upload(std::stringstream &ss);
 	void methods(std::stringstream &ss);
 	void max_body_size(std::stringstream &ss);
+	void redirect(std::stringstream &ss);
 
 };
 

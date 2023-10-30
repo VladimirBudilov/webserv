@@ -39,7 +39,9 @@ void ServerConfig::parseLocation(std::vector<std::string> &str, int& i)
 			res.methods(ss);
 		else if (word == "client_max_body_size")
 			res.max_body_size(ss);
-		else
+		else if (word == "redirect")
+			res.redirect((ss));
+			else
 			configError();
 		i++;
 	}

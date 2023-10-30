@@ -105,6 +105,7 @@ void ClientSocket::generateResponse() {
     std::string pathAfterCGIScript;
     std::string root;
 
+
     /// split request path to file and place to path after cgi
     parseRequestPath(fileToOpen, pathAfterCGIScript, location);
     std::string host = Request.getHeaders().find("Host")->second;
@@ -114,7 +115,7 @@ void ClientSocket::generateResponse() {
     std::vector<Location> locations = _config[0].getLocations();
     ///get config by host another will be default
     chooseConfig(host, currentConfig, locations);
-    ///go through first config and find location
+    ///go through config and find location
     root = rootParsing(location, locations, currentLocation);
     ///Validate request
     if(!isValidRequest(currentConfig, currentLocation, method, root, isAutoindex))
@@ -224,6 +225,10 @@ std::string ClientSocket::rootParsing(const std::string &location, const std::ve
         if (locations[j].getPath() == location) {
             root = locations[j].getRoot();
             currentLocation = locations[j];
+            if (locations[j].isRedirect()) {
+                std::string newLocation = locations[j].getRedirectPath();
+                root = rootParsing(newLocation, locations, currentLocation);
+            }
             break;
         }
     }

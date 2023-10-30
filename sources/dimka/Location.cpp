@@ -1,4 +1,6 @@
 #include "webserv.hpp"
+#include "Location.hpp"
+
 
 Location::Location() {
 	_path = std::string();
@@ -9,6 +11,7 @@ Location::Location() {
 	_file_upload = false;
 	_methods = std::vector<bool>(3, false);
 	_max_body_size = -1;
+    _redirect = false;
 }
 
 void Location::setPath(const std::string &path) {
@@ -81,6 +84,18 @@ void Location::file_upload(std::stringstream &ss)
 		this->_file_upload = false;
 	else
 		configError();
+}
+
+void Location::redirect(std::stringstream &ss) {
+	std::string word;
+	ss >> word;
+	if (word[word.size() - 1] != ';')
+		configError();
+	word.erase(word.size() - 1);
+	if (!ss.eof())
+		configError();
+	this->_redirect_path = word;
+	this->_redirect = true;
 }
 
 void Location::autoindex(std::stringstream &ss)
@@ -164,4 +179,12 @@ const std::vector<bool> &Location::getMethods() const {
 
 long long int Location::getMaxBodySize() const {
 	return _max_body_size;
+}
+
+bool Location::isRedirect() const {
+	return _redirect;
+}
+
+const std::string &Location::getRedirectPath() const {
+	return _redirect_path;
 }
