@@ -18,8 +18,10 @@ ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &
 }
 
 bool ClientSocket::isValidRequest() const {
-    if (Request.RequestData.empty())
+    if (Request.RequestData.empty()) {
+        std::cout << "empty request" << std::endl;
         return false;
+    }
     ///TODO add correct Request validation. or not))
     return true;
 }
@@ -65,7 +67,7 @@ pathToUpload) {
     std::string tmpCGIFile = "CGI" + std::to_string(_socket);
     int fdCGIFile = open((DataStorage::root + "/www/" + tmpCGIFile).c_str(), O_RDWR | O_CREAT, 0666);
     std::cout << DataStorage::root + "/www/" + tmpCGIFile << std::endl;
-    if (fdCGIFile == -1) {
+   if (fdCGIFile == -1) {
         perror("Ошибка при открытии файла");
         exit(1);
     }
@@ -125,13 +127,7 @@ void ClientSocket::generateResponse() {
     ///create response for DELETE request
     if (Request.getMethod() == "DELETE") {
         std::cout << "DELETE" << std::endl;
-        if (remove((root + location).c_str()) == -1) {
-            std::cout << "delete error" << std::endl;
-            generateErrorPage(currentConfig, 404);
-            return;
-        }
-        Response.GenerateContentType("text.html");
-        Response.ResponseData = Response.Status + Response.Body;
+         root = deleteFile(fileToOpen, root);
         return;
     }
     ///adjust path to file for location by default
@@ -142,6 +138,25 @@ void ClientSocket::generateResponse() {
         root += fileToOpen;
     getFoolPath(root);
     getDataByFullPath(root, currentConfig, currentLocation, pathAfterCGIScript);
+}
+
+std::string &ClientSocket::deleteFile(const std::string &fileToOpen, std::string &root) {
+    getFoolPath(root);
+    if (remove((root + fileToOpen).c_str()) == -1) {
+        std::cout << "delete error" << std::endl;
+        Response.ResponseData = "HTTP/1.1 404 Not Found\r\n"
+                        "Content-Type: application/json\r\n"
+                        "\r\n"
+                        "{\n"
+                        "    \"status\": \"error\",\n"
+                        "    \"message\": \"File not found.\"\n"
+                        "}";
+    }
+    Response.ResponseData = "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: text/plain\r\n"
+                    "\r\n"
+                    "File successfully deleted.";
+    return root;
 }
 
 void ClientSocket::generateAutoindexResponse() {
@@ -411,6 +426,12 @@ bool ClientSocket::CanMakeResponse() {
         std::cout << "POST request recived" << std::endl;
         std::cout << "content size " << Request.getHeaders().find("Content-Length")->second << std::endl;
         std::cout << "Body size " << Request.getBody().size() << std::endl;
+        _isReadyToMakeResponse = true;
+    }
+    ///check that request method is delete and request is complete
+    if (Request.getMethod() == "DELETE" && Request.RequestData.find("\r\n\r\n") != std::string::npos) {
+        Request.parse_request(Request.RequestData);
+        std::cout << "DELETE request recived" << std::endl;
         _isReadyToMakeResponse = true;
     }
     return _isReadyToMakeResponse;

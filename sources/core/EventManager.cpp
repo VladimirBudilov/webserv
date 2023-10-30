@@ -81,7 +81,7 @@ void EventManager::createResponse(ClientSocket &clientSocket) const {
     }
     std::cout << "request is valid" << std::endl;
     clientSocket.generateResponse();
-    if (clientSocket.Response.ResponseData.size() > 0)
+    if (!clientSocket.Response.ResponseData.empty())
         addClientSocketEvent(clientSocket);
     RemoveClientSocketEvent(clientSocket);
 }

@@ -69,6 +69,8 @@ public:
                         const std::string &root, bool isAutoindex);
 
     void generateAutoindexResponse();
+
+    std::string &deleteFile(const std::string &fileToOpen, std::string &root);
 };
 
 

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Delete Request Example</title>
+</head>
+<body>
+<h1>Delete Request Example</h1>
+<form id="delete-form">
+  <label for="api-endpoint-file-name">API Endpoint and File Name:</label>
+  <input type="text" id="api-endpoint-file-name" name="api_endpoint_file_name" placeholder="Enter API Endpoint and File Name">
+  <button type="button" id="delete-button">Delete File</button>
+</form>
+<div id="response"></div>
+
+<script>
+  document.getElementById('delete-button').addEventListener('click', function () {
+    var endpointFileNameInput = document.getElementById('api-endpoint-file-name');
+    var endpointFileName = endpointFileNameInput.value.trim();
+
+    // Split the input into API endpoint and file name
+    var parts = endpointFileName.split('/');
+
+    if (parts.length === 2) {
+      var endpoint = parts[0].trim();
+      var fileName = parts[1].trim();
+
+      var url = endpoint + '/' + fileName;
+
+      fetch(url, {
+        method: 'DELETE',
+      })
+              .then(response => {
+                if (response.status === 200) {
+                  return response.text(); // Convert the response to text
+                } else {
+                  return 'Error deleting file.';
+                }
+              })
+              .then(responseText => {
+                // Open a new tab and display the response
+                var newTab = window.open();
+                newTab.document.write(responseText);
+              })
+              .catch(error => {
+                console.error('Error:', error);
+              });
+    } else {
+      alert('Please enter both the API endpoint and the file name in the format "endpoint/filename".');
+    }
+  });
+</script>
+</body>
+</html>
