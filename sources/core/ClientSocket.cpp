@@ -22,7 +22,6 @@ bool ClientSocket::isValidRequest() const {
         std::cout << "empty request" << std::endl;
         return false;
     }
-    ///TODO add correct Request validation. or not))
     return true;
 }
 
@@ -65,7 +64,7 @@ pathToUpload) {
     pythonArgs[2] = NULL;
     std::string tmpCGIFile = "CGI" + std::to_string(_socket);
     int fdCGIFile = open((DataStorage::root + "/www/" + tmpCGIFile).c_str(), O_RDWR | O_CREAT, 0666);
-   if (fdCGIFile == -1) {
+    if (fdCGIFile == -1) {
         perror("Ошибка при открытии файла");
         exit(1);
     }
@@ -92,14 +91,14 @@ pathToUpload) {
     remove((DataStorage::root + "/www/" + tmpBodyFile).c_str());
     delete[] pythonArgs;
     delete[] pythonEnv;
-    Response.sentLength = 0;
 }
 
 void ClientSocket::generateResponse() {
     ServerConfig currentConfig;
     Location currentLocation;
     std::string method = Request.getMethod();
-    std::string location = Request.getPath();std::string fileToOpen;
+    std::string location = Request.getPath();
+    std::string fileToOpen;
     std::string pathAfterCGIScript;
     std::string root;
 
@@ -109,19 +108,20 @@ void ClientSocket::generateResponse() {
     bool isAutoindex = Request.getArgs().find("autoindex") != Request.getArgs().end();
     host = host.substr(0, host.find(':'));
     currentConfig = _config[0];
-    std::vector<Location> locations = _config[0].getLocations();
     ///get config by host another will be default
-    chooseConfig(host, currentConfig, locations);
+    chooseConfig(host, currentConfig);
+    ///get location by request path
+    std::vector<Location> locations = currentConfig.getLocations();
+    chooseLocation(host, currentConfig, locations);
     ///go through config and find location
     root = rootParsing(location, locations, currentLocation);
-    if(currentLocation.isRedirect())
-    {
+    if (currentLocation.isRedirect()) {
         ///generate redirect response with 301 code and Location header where will be currentLocation.getRedirect()
         generateRedirectResponse(currentLocation.getRedirectPath());
         return;
     }
     ///Validate request
-    if(!isValidRequest(currentConfig, currentLocation, method, root, isAutoindex))
+    if (!isValidRequest(currentConfig, currentLocation, method, root, isAutoindex))
         return;
     ///create response for isAutoindex
     if (currentLocation.isAutoindex() || isAutoindex) {
@@ -130,7 +130,7 @@ void ClientSocket::generateResponse() {
     }
     ///create response for DELETE request
     if (Request.getMethod() == "DELETE") {
-         root = deleteFile(fileToOpen, root);
+        deleteFile(fileToOpen, root);
         return;
     }
     ///adjust path to file for location by default
@@ -143,59 +143,62 @@ void ClientSocket::generateResponse() {
     getDataByFullPath(root, currentConfig, currentLocation, pathAfterCGIScript);
 }
 
-std::string &ClientSocket::deleteFile(const std::string &fileToOpen, std::string &root) {
+void ClientSocket::deleteFile(const std::string &fileToOpen, std::string &root) {
     getFoolPath(root);
     if (remove((root + fileToOpen).c_str()) == -1) {
         Response.ResponseData = "HTTP/1.1 404 Not Found\r\n"
-                        "Content-Type: application/json\r\n"
-                        "\r\n"
-                        "{\n"
-                        "    \"status\": \"error\",\n"
-                        "    \"message\": \"File not found.\"\n"
-                        "}";
+                                "Content-Type: application/json\r\n"
+                                "\r\n"
+                                "{\n"
+                                "    \"status\": \"error\",\n"
+                                "    \"message\": \"File not found.\"\n"
+                                "}";
+        return;
     }
     Response.ResponseData = "HTTP/1.1 200 OK\r\n"
-                    "Content-Type: text/plain\r\n"
-                    "\r\n"
-                    "File successfully deleted.";
-    return root;
+                            "Content-Type: text/plain\r\n"
+                            "\r\n"
+                            "File successfully deleted.";
 }
 
 void ClientSocket::generateAutoindexResponse() {
     std::string autoindexLocation = Request.getArgs().find("path")->second + Request.getPath();
     std::string html = generateAutoindexPage(DataStorage::root + "/www", autoindexLocation);
     Response.Body = html;
-    if(autoindexLocation.find('.') == std::string::npos)
+    if (autoindexLocation.find('.') == std::string::npos)
         Response.GenerateContentType("костыль.html"); ///TODO: do not fix it)))
     else
         Response.GenerateContentType(autoindexLocation);
     Response.ResponseData = Response.Status + Response.Body;
 }
 
-bool ClientSocket::isValidRequest(const ServerConfig &currentConfig, const Location &currentLocation, const std::string &method,
+bool ClientSocket::isValidRequest(const ServerConfig &currentConfig, const Location &currentLocation,
+                                  const std::string &method,
                                   const std::string &root, bool isAutoindex) {
     bool isValidRequest = true;
-    if (root.empty() && !isAutoindex) {
+    if (Request.hasError) {
+        generateErrorPage(currentConfig, Request.Error);
+        isValidRequest = false;
+    } else if (root.empty() && !isAutoindex) {
         generateErrorPage(currentConfig, 404);
         isValidRequest = false;
     }
-    ///check method
+        ///check method
     else if (!isValidMethod(method, currentLocation) && !isAutoindex) {
         generateErrorPage(currentConfig, 405);
         isValidRequest = false;
-
     }
-    ///check body size
+        ///check body size
     else if (Request.getHeaders().find("Content-Length") != Request.getHeaders().end()) {
-        if(currentLocation.getMaxBodySize() != -1 && currentLocation.getMaxBodySize() != -1){
-            if (Request.getBody().size() > (size_t)currentLocation.getMaxBodySize()
-                || Request.getBody().size() > currentConfig.getMaxBodySize()) {
+        if (currentLocation.getMaxBodySize() != -1 && currentLocation.getMaxBodySize() != -1) {
+            if (Request.getBody().size() < (size_t) currentLocation.getMaxBodySize()
+                || Request.getBody().size() < currentConfig.getMaxBodySize()) {
                 generateErrorPage(currentConfig, 413);
                 isValidRequest = false;
             }
         }
     }
-    /// check HTTP version
+        /// check HTTP version
     else if (!Request.isVersion() && !isAutoindex) {
         generateErrorPage(currentConfig, 505);
         isValidRequest = false;
@@ -204,7 +207,7 @@ bool ClientSocket::isValidRequest(const ServerConfig &currentConfig, const Locat
 }
 
 void
-ClientSocket::chooseConfig(const std::string &host, ServerConfig &currentConfig, std::vector<Location> &locations) {
+ClientSocket::chooseLocation(const std::string &host, ServerConfig &currentConfig, std::vector<Location> &locations) {
     for (size_t i = 0; i < _config.size(); i++) {
         if (_config[i].getHost() == host) {
             currentConfig = _config[i];
@@ -295,18 +298,17 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
     ///handle cgi(.py scripts)
     if (isCGI(path)) {
         generateCGIResponse(path, location, pathAfterCGIScript);
+        if (Response.ResponseData.empty())
+            generateErrorPage(config, 500);
         return;
     }
     ///handle static files
     std::ifstream file(path.c_str(), std::ios::binary);
     if (file) {
-        // Find the length of the file
         file.seekg(0, std::ios::end);
         std::streampos length = file.tellg();
         file.seekg(0, std::ios::beg);
-        // Resize the Response.Body to fit the entire file
         response.resize(length);
-        // Read the entire file into Response.Body
         file.read(&response[0], length);
         file.close();
         Response.Body = response;
@@ -320,10 +322,9 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
     }
 }
 
-void ClientSocket::generateErrorPage(const ServerConfig &config, int errorNumber)
-{
+void ClientSocket::generateErrorPage(const ServerConfig &config, int errorNumber) {
     std::map<short, std::string> errors = config.getErrorPages();
-    std::string errorRoot = errors[(short)errorNumber];
+    std::string errorRoot = errors[(short) errorNumber];
     Response.generateDefaultErrorPage(errorNumber);
     if (!errorRoot.empty()) {
         getFoolPath(errorRoot);
@@ -430,3 +431,9 @@ void ClientSocket::generateRedirectResponse(const std::string &locationToRedir) 
 
 }
 
+void ClientSocket::chooseConfig(const std::string &host, ServerConfig &config) {
+    for (size_t i = 0; i < _config.size(); i++) {
+        if (_config[i].getServerName() == host)
+            config = _config[i];
+    }
+}

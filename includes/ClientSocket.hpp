@@ -53,16 +53,18 @@ public:
     std::string rootParsing(const std::string &location, const std::vector<Location> &locations,
                             Location &currentLocation) const;
 
-    void chooseConfig(const std::string &host, ServerConfig &currentConfig, std::vector<Location> &locations);
+    void chooseLocation(const std::string &host, ServerConfig &currentConfig, std::vector<Location> &locations);
 
     bool isValidRequest(const ServerConfig &currentConfig, const Location &currentLocation, const std::string &method,
                         const std::string &root, bool isAutoindex);
 
     void generateAutoindexResponse();
 
-    std::string &deleteFile(const std::string &fileToOpen, std::string &root);
+    void deleteFile(const std::string &fileToOpen, std::string &root);
 
     void generateRedirectResponse(const std::string &locationToRedir);
+
+    void chooseConfig(const std::string& host, ServerConfig &config);
 };
 
 

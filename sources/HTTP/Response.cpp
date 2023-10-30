@@ -57,5 +57,5 @@ void Response::GenerateContentType(const std::string& path) {
     else
         res = "txt";
     ContentType += DataStorage::mimeTypes[res] + "\n\n";
-    Status += NumStatus +ContentType;
+    Status += NumStatus + ContentType;
 }

@@ -56,7 +56,8 @@ void Request::parse_request(const std::string &request) {
         }
     }
     if (method != "GET" && method != "POST" && method != "DELETE") {
-        //TODO: bad request, send 501 error code (not implemented)
+        hasError = true;
+        Error = 501;
         std::cout << "bad request(method)" << std::endl;
     }
     if (method == "POST")
