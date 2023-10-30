@@ -56,7 +56,6 @@ pathToUpload) {
     }
     if (hasBody) {
         pythonEnv[i++] = strdup(("BODY_FILE=" + DataStorage::root + "/www/" + tmpBodyFile).c_str());
-        std::cout << "BODY_FILE=" + DataStorage::root + "/www/" + tmpBodyFile << std::endl;
     }
     pythonEnv[i] = NULL;
     ///generate args for execve
@@ -66,7 +65,6 @@ pathToUpload) {
     pythonArgs[2] = NULL;
     std::string tmpCGIFile = "CGI" + std::to_string(_socket);
     int fdCGIFile = open((DataStorage::root + "/www/" + tmpCGIFile).c_str(), O_RDWR | O_CREAT, 0666);
-    std::cout << DataStorage::root + "/www/" + tmpCGIFile << std::endl;
    if (fdCGIFile == -1) {
         perror("Ошибка при открытии файла");
         exit(1);
@@ -105,7 +103,6 @@ void ClientSocket::generateResponse() {
     std::string pathAfterCGIScript;
     std::string root;
 
-
     /// split request path to file and place to path after cgi
     parseRequestPath(fileToOpen, pathAfterCGIScript, location);
     std::string host = Request.getHeaders().find("Host")->second;
@@ -117,6 +114,12 @@ void ClientSocket::generateResponse() {
     chooseConfig(host, currentConfig, locations);
     ///go through config and find location
     root = rootParsing(location, locations, currentLocation);
+    if(currentLocation.isRedirect())
+    {
+        ///generate redirect response with 301 code and Location header where will be currentLocation.getRedirect()
+        generateRedirectResponse(currentLocation.getRedirectPath());
+        return;
+    }
     ///Validate request
     if(!isValidRequest(currentConfig, currentLocation, method, root, isAutoindex))
         return;
@@ -127,7 +130,6 @@ void ClientSocket::generateResponse() {
     }
     ///create response for DELETE request
     if (Request.getMethod() == "DELETE") {
-        std::cout << "DELETE" << std::endl;
          root = deleteFile(fileToOpen, root);
         return;
     }
@@ -144,7 +146,6 @@ void ClientSocket::generateResponse() {
 std::string &ClientSocket::deleteFile(const std::string &fileToOpen, std::string &root) {
     getFoolPath(root);
     if (remove((root + fileToOpen).c_str()) == -1) {
-        std::cout << "delete error" << std::endl;
         Response.ResponseData = "HTTP/1.1 404 Not Found\r\n"
                         "Content-Type: application/json\r\n"
                         "\r\n"
@@ -161,7 +162,6 @@ std::string &ClientSocket::deleteFile(const std::string &fileToOpen, std::string
 }
 
 void ClientSocket::generateAutoindexResponse() {
-    std::cout << "isAutoindex" << std::endl;
     std::string autoindexLocation = Request.getArgs().find("path")->second + Request.getPath();
     std::string html = generateAutoindexPage(DataStorage::root + "/www", autoindexLocation);
     Response.Body = html;
@@ -176,13 +176,11 @@ bool ClientSocket::isValidRequest(const ServerConfig &currentConfig, const Locat
                                   const std::string &root, bool isAutoindex) {
     bool isValidRequest = true;
     if (root.empty() && !isAutoindex) {
-        std::cout << "empty root" << std::endl;
         generateErrorPage(currentConfig, 404);
         isValidRequest = false;
     }
     ///check method
     else if (!isValidMethod(method, currentLocation) && !isAutoindex) {
-        std::cout << "invalid method" << std::endl;
         generateErrorPage(currentConfig, 405);
         isValidRequest = false;
 
@@ -192,7 +190,6 @@ bool ClientSocket::isValidRequest(const ServerConfig &currentConfig, const Locat
         if(currentLocation.getMaxBodySize() != -1 && currentLocation.getMaxBodySize() != -1){
             if (Request.getBody().size() > (size_t)currentLocation.getMaxBodySize()
                 || Request.getBody().size() > currentConfig.getMaxBodySize()) {
-                std::cout << "invalid body size" << std::endl;
                 generateErrorPage(currentConfig, 413);
                 isValidRequest = false;
             }
@@ -200,7 +197,6 @@ bool ClientSocket::isValidRequest(const ServerConfig &currentConfig, const Locat
     }
     /// check HTTP version
     else if (!Request.isVersion() && !isAutoindex) {
-        std::cout << "invalid HTTP version" << std::endl;
         generateErrorPage(currentConfig, 505);
         isValidRequest = false;
     }
@@ -225,10 +221,6 @@ std::string ClientSocket::rootParsing(const std::string &location, const std::ve
         if (locations[j].getPath() == location) {
             root = locations[j].getRoot();
             currentLocation = locations[j];
-            if (locations[j].isRedirect()) {
-                std::string newLocation = locations[j].getRedirectPath();
-                root = rootParsing(newLocation, locations, currentLocation);
-            }
             break;
         }
     }
@@ -286,8 +278,6 @@ ClientSocket::generateAutoindexPage(const std::string &rootPath, const std::stri
         closedir(dir);
     } else {
         std::fstream file(path.c_str());
-        std::cout << path << std::endl;
-
         if (!file.is_open())
             html << "Error: cannot open file" << std::endl;
         else {
@@ -304,7 +294,6 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
     std::string response;
     ///handle cgi(.py scripts)
     if (isCGI(path)) {
-        std::cout << "CGI" << std::endl;
         generateCGIResponse(path, location, pathAfterCGIScript);
         return;
     }
@@ -382,7 +371,6 @@ void ClientSocket::getErrorPageData(const std::string &errorRoot) {
         std::getline(file, response, '\0');
         file.close();
     } else {
-        std::cout << "error page" << std::endl;
         Response.ResponseData = Response.Status + Response.Body;
         return;
     }
@@ -416,29 +404,29 @@ bool ClientSocket::CanMakeResponse() {
         Request.RequestData.find("\r\n\r\n") != std::string::npos) {
         Request.parse_request(Request.RequestData);
         if (Request.getMethod() == "GET") {
-            std::cout << "GET request recived" << std::endl;
             _isReadyToMakeResponse = true;
         }
     }
     ///update data of body size in request
     if (Request.getMethod() == "POST")
         Request.parse_request(Request.RequestData);
-    std::cout << "content size " << Request.getHeaders().find("Content-Length")->second << std::endl;
-    std::cout << "Body size " << Request.getBody().size() << std::endl;
     ///check that request method is post and request is complete
     if (Request.getMethod() == "POST" &&
         std::atoi((Request.getHeaders().find("Content-Length")->second).c_str()) == (int) Request.getBody().size()) {
-        std::cout << "POST request recived" << std::endl;
-        std::cout << "content size " << Request.getHeaders().find("Content-Length")->second << std::endl;
-        std::cout << "Body size " << Request.getBody().size() << std::endl;
         _isReadyToMakeResponse = true;
     }
     ///check that request method is delete and request is complete
     if (Request.getMethod() == "DELETE" && Request.RequestData.find("\r\n\r\n") != std::string::npos) {
         Request.parse_request(Request.RequestData);
-        std::cout << "DELETE request recived" << std::endl;
         _isReadyToMakeResponse = true;
     }
     return _isReadyToMakeResponse;
+}
+
+void ClientSocket::generateRedirectResponse(const std::string &locationToRedir) {
+    Response.Status = "HTTP/1.1 301 Moved Permanently\r\n";
+    Response.Status += "Location: " + locationToRedir + "\r\n";
+    Response.ResponseData = Response.Status + Response.Body;
+
 }
 

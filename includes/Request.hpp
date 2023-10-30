@@ -19,7 +19,9 @@ public:
 
     const std::string &getBody() const;
     const std::map<std::string, std::string> &getArgs() const;
-
+    int Error;
+    bool hasError;
+    Request();
 private:
     std::string method;
     std::string path;

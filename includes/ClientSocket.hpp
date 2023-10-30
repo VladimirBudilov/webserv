@@ -17,23 +17,13 @@ private:
     kEvent _clientInterest;
     std::string _read;
     size_t _much_written;
-    ClientSocket(){}; // private default constructor
     bool _isReadyToMakeResponse;
 public:
     int ResponseSize;
     Request Request;
     Response Response;
     ClientSocket(int socket, int kq, const std::vector<ServerConfig> &configs);
-
 	std::string generateAutoindexPage(const std::string &rootPath, const std::string &location);
-
-    void setClientInterest(const kEvent &clientInterest);
-    kEvent &getClientInterest();
-
-    void Read(const std::string &read);
-
-    void MuchWritten(size_t muchWritten);
-
     const std::string &getRead() const {
         return _read;
     }
@@ -71,6 +61,8 @@ public:
     void generateAutoindexResponse();
 
     std::string &deleteFile(const std::string &fileToOpen, std::string &root);
+
+    void generateRedirectResponse(const std::string &locationToRedir);
 };
 
 
