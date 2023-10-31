@@ -1,7 +1,7 @@
 #include "DataStorage.hpp"
 
 std::map<int, std::string> DataStorage::defaultErrorPages;
-std::map<std::string, std::string> DataStorage::mimeTypes = initMimeTypes();
+std::map<std::string, std::string> DataStorage::MimeTypes = initMimeTypes();
 
 std::string DataStorage::root = DataStorage::getCurrentWorkingDirectory();
 

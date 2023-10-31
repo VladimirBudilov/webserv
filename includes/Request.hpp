@@ -6,7 +6,9 @@
 class Request {
 public:
     std::string RequestData;
+
     bool hasCGI();
+
     void parse_request(const std::string &request);
 
     const std::string &getMethod() const;
@@ -18,14 +20,18 @@ public:
     const std::map<std::string, std::string> &getHeaders() const;
 
     const std::string &getBody() const;
+
     const std::map<std::string, std::string> &getArgs() const;
+
     int Error;
     bool hasError;
+
     Request();
+
 private:
     std::string method;
     std::string path;
-	std::map<std::string, std::string> args;
+    std::map<std::string, std::string> args;
     bool version;
     std::map<std::string, std::string> headers;
     std::string body;

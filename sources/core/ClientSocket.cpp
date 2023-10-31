@@ -19,14 +19,18 @@ ClientSocket::ClientSocket(int socket, int kq, const std::vector<ServerConfig> &
 
 bool ClientSocket::isValidRequest() const {
     if (Request.RequestData.empty()) {
-        std::cout << "empty request" << std::endl;
         return false;
     }
     return true;
 }
 
-void ClientSocket::generateCGIResponse(const std::string &path, const Location &location, const std::string &
-pathToUpload) {
+void
+ClientSocket::generateCGIResponse(const std::string &path, const Location &location, const std::string &pathToUpload,
+                                  const ServerConfig &config) {
+    if (Request.getMethod() == "POST" && Request.getBody().empty()) {
+        generateErrorPage(config, 400);
+        return;
+    }
     const char *pythonScriptPath = path.c_str();
     const char *pythonInterpreter = location.getCgiPass().c_str();
     std::string pathInfo;
@@ -41,7 +45,6 @@ pathToUpload) {
         file << Request.getBody();
         file.close();
     }
-    pathInfo = path.substr(path.find(".py") + 3, path.size() - 1);
     pathInfo = "PATH_INFO=" + DataStorage::root + "/www" + pathToUpload;
     pathTranslated = "PATH_TRANSLATED=" + DataStorage::root + "/www/" + pathInfo;
     pythonEnv[0] = strdup(pathInfo.c_str());
@@ -125,7 +128,7 @@ void ClientSocket::generateResponse() {
         return;
     ///create response for isAutoindex
     if (currentLocation.isAutoindex() || isAutoindex) {
-        generateAutoindexResponse();
+        generateAutoindexResponse(currentConfig);
         return;
     }
     ///create response for DELETE request
@@ -161,10 +164,12 @@ void ClientSocket::deleteFile(const std::string &fileToOpen, std::string &root) 
                             "File successfully deleted.";
 }
 
-void ClientSocket::generateAutoindexResponse() {
+void ClientSocket::generateAutoindexResponse(ServerConfig &config) {
     std::string autoindexLocation = Request.getArgs().find("path")->second + Request.getPath();
-    std::string html = generateAutoindexPage(DataStorage::root + "/www", autoindexLocation);
-    Response.Body = html;
+    if (!generateAutoindexPage(DataStorage::root + "/www", autoindexLocation)) {
+        generateErrorPage(config, 404);
+        return;
+    }
     if (autoindexLocation.find('.') == std::string::npos)
         Response.GenerateContentType("костыль.html"); ///TODO: do not fix it)))
     else
@@ -189,10 +194,16 @@ bool ClientSocket::isValidRequest(const ServerConfig &currentConfig, const Locat
         isValidRequest = false;
     }
         ///check body size
-    else if (Request.getHeaders().find("Content-Length") != Request.getHeaders().end()) {
-        if (currentLocation.getMaxBodySize() != -1 && currentLocation.getMaxBodySize() != -1) {
-            if (Request.getBody().size() < (size_t) currentLocation.getMaxBodySize()
-                || Request.getBody().size() < currentConfig.getMaxBodySize()) {
+    else if (currentLocation.getMaxBodySize() != -1 || currentConfig.getMaxBodySize() != -1) {
+
+        if (currentLocation.getMaxBodySize() == -1) {
+            if ((long long int)Request.getBody().size() > currentConfig.getMaxBodySize()) {
+                generateErrorPage(currentConfig, 413);
+                isValidRequest = false;
+            }
+        }
+        else if (currentConfig.getMaxBodySize() == -1) {
+            if ((long long int)Request.getBody().size() > currentLocation.getMaxBodySize()) {
                 generateErrorPage(currentConfig, 413);
                 isValidRequest = false;
             }
@@ -251,7 +262,7 @@ void ClientSocket::parseRequestPath(std::string &fileToOpen, std::string &placeT
     }
 }
 
-std::string
+bool
 ClientSocket::generateAutoindexPage(const std::string &rootPath, const std::string &location) {
     DIR *dir;
     struct dirent *ent;
@@ -281,14 +292,15 @@ ClientSocket::generateAutoindexPage(const std::string &rootPath, const std::stri
         closedir(dir);
     } else {
         std::fstream file(path.c_str());
-        if (!file.is_open())
-            html << "Error: cannot open file" << std::endl;
-        else {
+        if (!file.is_open()) {
+            return false;
+        } else {
             file >> html.rdbuf();
             file.close();
         }
     }
-    return html.str();
+    Response.Body = html.str();
+    return true;
 }
 
 void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig &config, const Location &location,
@@ -297,7 +309,7 @@ void ClientSocket::getDataByFullPath(const std::string &path, const ServerConfig
     std::string response;
     ///handle cgi(.py scripts)
     if (isCGI(path)) {
-        generateCGIResponse(path, location, pathAfterCGIScript);
+        generateCGIResponse(path, location, pathAfterCGIScript, config);
         if (Response.ResponseData.empty())
             generateErrorPage(config, 500);
         return;

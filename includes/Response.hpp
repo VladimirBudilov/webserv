@@ -15,6 +15,7 @@ public:
     std::string Body;
 
     void generateDefaultErrorPage(int code);
+
     Response();
 
     void getDefaultErrorPage(int code);

@@ -9,7 +9,17 @@ Response::Response() {
 }
 
 void Response::generateDefaultErrorPage(int code) {
-    if (code == 404) {
+    if(code == 400) {
+        GenerateErrorStatus("HTTP/1.1 400 Bad Request\n", "text/html\n\n");
+        getDefaultErrorPage(code);
+    } else if (code == 401) {
+        GenerateErrorStatus("HTTP/1.1 401 Unauthorized\n", "text/html\n\n");
+        getDefaultErrorPage(code);
+    } else if (code == 403) {
+        GenerateErrorStatus("HTTP/1.1 403 Forbidden\n", "text/html\n\n");
+        getDefaultErrorPage(code);
+    }
+    else if (code == 404) {
         GenerateErrorStatus("HTTP/1.1 404 Not Found\n", "text/html\n\n");
         getDefaultErrorPage(code);
     } else if (code == 405) {
@@ -28,7 +38,6 @@ void Response::generateDefaultErrorPage(int code) {
         GenerateErrorStatus("HTTP/1.1 505 HTTP Version Not Supported\n", "text/html\n\n");
         getDefaultErrorPage(code);
     }
-
 }
 
 void Response::GenerateErrorStatus(std::string numStatus, std::string contType) {
@@ -56,6 +65,6 @@ void Response::GenerateContentType(const std::string& path) {
         res = path.substr(pos + 1);
     else
         res = "txt";
-    ContentType += DataStorage::mimeTypes[res] + "\n\n";
+    ContentType += DataStorage::MimeTypes[res] + "\n\n";
     Status += NumStatus + ContentType;
 }

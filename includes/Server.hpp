@@ -20,19 +20,10 @@ private:
     std::list<ClientSocket> _clientSockets;
     std::vector<ServerConfig> _serverConfigs;
 public:
-
     Server();
     ~Server(){};
     void parseConfigFile(const std::string &configFile);
     void start();
-    void stop();
-    void restart();
-    void reload();
-    void status();
-    void configtest();
-    void help();
-    void version();
-
     const std::vector<ServerConfig> &getServerConfigs() const;
     void addServerSocketsToEventManager();
     void generateServerSockets();

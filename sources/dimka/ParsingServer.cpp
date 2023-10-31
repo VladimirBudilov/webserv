@@ -165,6 +165,6 @@ const std::vector<Location> &ServerConfig::getLocations() const {
 	return _locations;
 }
 
-unsigned long long int ServerConfig::getMaxBodySize() const {
+long long int ServerConfig::getMaxBodySize() const {
 	return _max_body_size;
 }

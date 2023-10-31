@@ -12,7 +12,7 @@ private:
 	std::string _server_name;
 	std::map<short, std::string> _error_pages;
 	std::vector<Location> _locations;
-	long long _max_body_size;
+	long long int _max_body_size;
 public:
 	ServerConfig();
 
@@ -21,7 +21,7 @@ public:
 	const std::string &getServerName() const;
 	const std::map<short, std::string> &getErrorPages() const;
 	const std::vector<Location> &getLocations() const;
-	unsigned long long int getMaxBodySize() const;
+	long long int getMaxBodySize() const;
 
 	void parseLocation(std::vector<std::string> &str, int& i);
 	void listen(std::stringstream &ss);

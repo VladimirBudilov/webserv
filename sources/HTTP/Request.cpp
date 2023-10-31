@@ -21,10 +21,8 @@ void Request::parse_request(const std::string &request) {
 
     if (this->path.find("?") != std::string::npos) {
         if (this->path.find("?") == this->path.size() - 1 || this->path.find("?") == 0) {
-            std::cout << "bad request(?)" << std::endl;
             return;
         }
-
         std::string arguments = this->path.substr(this->path.find("?") + 1);
         this->path = this->path.substr(0, this->path.find("?"));
         while (arguments.find("&") != std::string::npos) {
@@ -35,9 +33,7 @@ void Request::parse_request(const std::string &request) {
         this->args.insert(
                 std::make_pair(arguments.substr(0, arguments.find("=")), arguments.substr(arguments.find("=") + 1)));
     }
-
     if (request.find("\r\n\r\n") == std::string::npos) {
-        std::cout << "request dont have end" << std::endl;
         return;
     }
 
@@ -45,7 +41,6 @@ void Request::parse_request(const std::string &request) {
     size_t i = 0;
     while (i < pos) {
         if (request.find("\r\n") == std::string::npos) {
-            std::cout << "bad request(\"\\r\\n\")" << std::endl;
             return;
         }
         line = request.substr(i, request.find("\r\n", i) - i);
