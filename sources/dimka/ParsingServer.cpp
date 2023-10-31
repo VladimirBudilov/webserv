@@ -5,7 +5,7 @@ ServerConfig::ServerConfig() {
 	this->_server_name = "localhost";
 	this->_host = "error";
 	this->_error_pages = std::map<short, std::string>();
-	this->_max_body_size = 1024;
+	this->_max_body_size = -1;
 	this->_locations = std::vector<Location>();
 }
 
@@ -39,7 +39,9 @@ void ServerConfig::parseLocation(std::vector<std::string> &str, int& i)
 			res.methods(ss);
 		else if (word == "client_max_body_size")
 			res.max_body_size(ss);
-		else
+		else if (word == "redirect")
+			res.redirect((ss));
+			else
 			configError();
 		i++;
 	}
@@ -163,6 +165,6 @@ const std::vector<Location> &ServerConfig::getLocations() const {
 	return _locations;
 }
 
-unsigned long long int ServerConfig::getMaxBodySize() const {
+long long int ServerConfig::getMaxBodySize() const {
 	return _max_body_size;
 }

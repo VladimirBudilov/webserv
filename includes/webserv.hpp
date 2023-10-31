@@ -9,6 +9,10 @@
 #include <map>
 #include <cstdlib>
 #include <cctype>
+#include <iostream>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <ctime>
 #include "Location.hpp"
 #include "ServerConfig.hpp"
 
@@ -16,5 +20,6 @@ void removeComments(std::vector<std::string> &str);
 void parseServer(std::vector<std::string> &str, std::vector<ServerConfig>& servers, int& i);
 void configError();
 bool isValidIP(const std::string& ip);
+std::string fileType(const std::string& path);
 
 #endif //WEBSERV_WEBSERV_HPP

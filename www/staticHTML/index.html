@@ -1,34 +1,72 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reload and Start CGI</title>
+  <title>Landing Page</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background-color: #3AAFA9;
+    }
+
+    .landing {
+      width: 800px;
+      margin: 0 auto;
+      padding: 10px;
+      border-radius: 15px;
+      border: #2b7a78 1px solid;
+      background-color: #def2f1;
+    }
+
+    .landing h1 {
+      font-size: 34px;
+      margin: 10px 0;
+    }
+
+    .landing p {
+      margin: 5px 0;
+    }
+
+    .landing input[type="file"] {
+      width: 40%;
+      padding: 8px;
+      margin: 5px 0;
+      border-radius: 10px;
+      font-size: 1.5rem;
+      border: none !important;
+    }
+
+    .landing button {
+      width: 35%;
+      padding: 10px;
+      margin: 5px;
+      font-size: 18px;
+      cursor: pointer;
+      border-radius: 10px;
+      border: #2b7a78 1px solid;
+      background-color: #b7e1e0;
+    }
+  </style>
 </head>
-<body>
-<h1>Reload and Start CGI</h1>
-
-<!-- Reload Button -->
-<button onclick="reloadPage()">Reload</button>
-
-<!-- Start CGI Button -->
-<button onclick="startCGI()">Start CGI</button>
-
-<script>
-  // Reload the current page
-  function reloadPage() {
-    location.reload();
-  }
-
-  // You can replace the following URL with the actual CGI script you want to start
-  function startCGI() {
-    // Replace 'your-cgi-script-url' with the URL of your CGI script
-    var cgiScriptUrl = '/bin-cgi/data.py';
-
-    // Open the CGI script URL in a new window/tab
-    window.open(cgiScriptUrl);
-  }
-</script>
-</body>
+  <body>
+    <div class="landing">
+      <h1>Webserv</h1>
+      <div class="row">
+        <a href="/bin-cgi/calculator(GetRequest).py?v1=1&v2=1&operator=+"><button>Calculator(GetRequestTester)</button></a>
+        <a href="/counter"><button>Counter(PostRequestTester)</button></a>
+      </div>
+      <div class="row">
+        <a href="/deleter"><button>Deleter</button></a>
+        <a href="/uploader"><button>Uploader</button></a>
+      </div>
+      <div class="row">
+        <a href="/bin-cgi/downloader.py/images/orange.jpeg"><button>Download Image</button></a>
+        <a href="/bin-cgi/downloader.py/errors/404.html"><button>Download HTML page</button></a>
+      </div>
+      <div class="row">
+        <a href="/wrong_home_page"><button>Redirect inplace</button></a>
+        <a href="/wrong_home_page" target="_blank"><button>Redirect on new tab</button></a>
+      </div>
+    </div>
+  </body>
 </html>
-

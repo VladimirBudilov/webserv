@@ -14,7 +14,8 @@ void EventManager::loop(std::vector<ServerSocket> &serverSockets, std::list<Clie
             clientSocketFd = getClientSocketFd(clientSockets, currentEventSocketFd);
             if (serverSocketFd != -1) {
                 /// new connection with server
-                ClientSocket clientSocket(currentEventSocketFd, _kq, getServerSocketBySocketFd(serverSockets,currentEventSocketFd).getConfig());
+                ClientSocket clientSocket(currentEventSocketFd, _kq,
+                                          getServerSocketBySocketFd(serverSockets, currentEventSocketFd).getConfig());
                 clientSockets.push_back(clientSocket);
                 /// client-server communication
             } else if (clientSocketFd != -1) {
@@ -52,9 +53,16 @@ void EventManager::writeResponse(ClientSocket &clientSocket, std::list<ClientSoc
             bufToWrite,
             0
     );
+    if(wasSent == -1)
+    {
+        close(clientSocket.getSocket());
+        RemoveClientSocketEvent(clientSocket);
+        clientSockets.remove(clientSocket);
+        return;
+    }
     sentLength += wasSent;
     if (sentLength >= length) {
-        RemoveCLientSocketEvent(clientSocket);
+        RemoveClientSocketEvent(clientSocket);
         close(clientSocket.getSocket());
         clientSockets.remove(clientSocket);
     }
@@ -62,28 +70,36 @@ void EventManager::writeResponse(ClientSocket &clientSocket, std::list<ClientSoc
 
 void EventManager::readRequest(ClientSocket &clientSocket, const EventManager::kEvent &event) const {
     char buf[1024];
-    int recived = recv(clientSocket.getSocket(), buf, sizeof(buf), 0);
-    buf[recived] = '\0';
-    clientSocket.Request.RequestData += buf;
-    validareEOF(clientSocket, event);
+    int received = recv(clientSocket.getSocket(), buf, sizeof(buf), 0);
+    if (received == -1) {
+        close(clientSocket.getSocket());
+        RemoveClientSocketEvent(clientSocket);
+        return;
+    }
+    if (received > 0)
+        buf[received] = '\0';
+    clientSocket.Request.RequestData.append(buf, received);
+    validateEOF(clientSocket, event);
 }
 
 void EventManager::createResponse(ClientSocket &clientSocket) const {
-    if (!clientSocket.isValidRequest())
+    if (!clientSocket.CanMakeResponse())
         return;
-    if (clientSocket.Request.hasCGI())
-        clientSocket.generateCGIResponse();
-    else
-        clientSocket.generateStaticResponse();
-    if (clientSocket.Response.ResponseData.size() > 0)
+    if (!clientSocket.isValidRequest()) {
+        RemoveClientSocketEvent(clientSocket);
+        close(clientSocket.getSocket());
+        return;
+    }
+    clientSocket.generateResponse();
+    if (!clientSocket.Response.ResponseData.empty())
         addClientSocketEvent(clientSocket);
-    RemoveCLientSocketEvent(clientSocket);
+    RemoveClientSocketEvent(clientSocket);
 }
 
-void EventManager::RemoveCLientSocketEvent(const ClientSocket &clientSocket) const {
-    struct kevent currentReadingevent;
-    EV_SET(&currentReadingevent, clientSocket.getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    kevent(_kq, &currentReadingevent, 1, NULL, 0, NULL);
+void EventManager::RemoveClientSocketEvent(const ClientSocket &clientSocket) const {
+    struct kevent currentReadingEvent;
+    EV_SET(&currentReadingEvent, clientSocket.getSocket(), EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    kevent(_kq, &currentReadingEvent, 1, NULL, 0, NULL);
 }
 
 void EventManager::addClientSocketEvent(const ClientSocket &clientSocket) const {
@@ -99,9 +115,9 @@ void EventManager::registerListeningEvent(int socket) {
     _eventsList.push_back(event);
 }
 
-void EventManager::validareEOF(const ClientSocket &clientSocket, const EventManager::kEvent &event) const {
+void EventManager::validateEOF(ClientSocket &clientSocket, const EventManager::kEvent &event) const {
+    ///check that request is empty and EOF
     if (event.flags & EV_EOF && clientSocket.Request.RequestData.size() == 0) {
-        std::cout << "eof" << std::endl;
         close(clientSocket.getSocket());
     }
 }

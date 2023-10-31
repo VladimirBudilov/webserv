@@ -28,6 +28,7 @@
 #include <unistd.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include "DataStorage.hpp"
 
 
 #endif //WEBSERV_WEBSERVHEADERS_HPP
